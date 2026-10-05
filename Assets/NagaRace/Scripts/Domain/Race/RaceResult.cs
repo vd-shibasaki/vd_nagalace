@@ -25,9 +25,22 @@ namespace NagaRace.Domain.Race
         /// <summary>未ゴールは -1。</summary>
         public long FinishTimeMilliseconds { get; }
 
+        /// <summary>リタイア（Lost を含む）。</summary>
+        public bool Retired { get; internal set; }
+        public bool Lost { get; internal set; }
+        public double DurabilityDamage { get; internal set; }
+        public double FurnaceSeconds { get; internal set; }
+        public double OverflowSeconds { get; internal set; }
+        public double MaxFurnaceSeconds { get; internal set; }
+        public bool FurnaceDamaged { get; internal set; }
+        public FurnaceFailure WorstFailure { get; internal set; }
+        public bool HadAccident { get; internal set; }
+
         /// <summary>"01:42.186" 形式。</summary>
         public string FormatTime()
         {
+            if (Lost) return "LOST";
+            if (Retired) return "リタイア";
             if (!Finished) return "--:--.---";
             long ms = FinishTimeMilliseconds;
             return $"{ms / 60000:00}:{ms / 1000 % 60:00}.{ms % 1000:000}";

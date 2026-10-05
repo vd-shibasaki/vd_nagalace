@@ -30,6 +30,25 @@ namespace NagaRace.Domain.Common
             return new Pcg32Random(derivedSeed, derivedStream);
         }
 
+        /// <summary>
+        /// 文字列の安定したハッシュ（FNV-1a 64bit）。string.GetHashCode は実行ごとに変わるため Seed 計算に使わない。
+        /// </summary>
+        public static ulong StableHash(string text)
+        {
+            unchecked
+            {
+                ulong hash = 14695981039346656037UL;
+                if (text == null) return hash;
+                foreach (char c in text)
+                {
+                    hash ^= c;
+                    hash *= 1099511628211UL;
+                }
+
+                return hash;
+            }
+        }
+
         public static ulong SplitMix64(ulong x)
         {
             unchecked

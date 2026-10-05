@@ -2,9 +2,17 @@ using NagaRace.Domain.Common;
 
 namespace NagaRace.Domain.Characters
 {
+    public enum FurnaceStat
+    {
+        Output,
+        Startup,
+        CriticalDuration,
+        Cooling,
+        Durability,
+    }
+
     /// <summary>
     /// 葉脈炉の能力（02 §4, 04 §8.2）。
-    /// TODO(M3): レースでの使用は M3 で実装する。M1 では出走データの置き場としてのみ持つ。
     /// </summary>
     public sealed class FurnaceStats
     {
@@ -23,6 +31,31 @@ namespace NagaRace.Domain.Characters
         public int Cooling { get; }
         /// <summary>炉耐久。</summary>
         public int Durability { get; }
+
+        public int this[FurnaceStat stat]
+        {
+            get
+            {
+                switch (stat)
+                {
+                    case FurnaceStat.Output: return Output;
+                    case FurnaceStat.Startup: return Startup;
+                    case FurnaceStat.CriticalDuration: return CriticalDuration;
+                    case FurnaceStat.Cooling: return Cooling;
+                    default: return Durability;
+                }
+            }
+        }
+
+        public FurnaceStats With(FurnaceStat stat, int value)
+        {
+            return new FurnaceStats(
+                stat == FurnaceStat.Output ? value : Output,
+                stat == FurnaceStat.Startup ? value : Startup,
+                stat == FurnaceStat.CriticalDuration ? value : CriticalDuration,
+                stat == FurnaceStat.Cooling ? value : Cooling,
+                stat == FurnaceStat.Durability ? value : Durability);
+        }
 
         public static FurnaceStats Uniform(int value)
         {

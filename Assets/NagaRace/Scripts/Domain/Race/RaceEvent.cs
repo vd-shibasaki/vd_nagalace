@@ -34,6 +34,14 @@ namespace NagaRace.Domain.Race
         LeafChanceHit,
         /// <summary>葉力チャンスを逃した。</summary>
         LeafChanceMiss,
+        /// <summary>耐久ダメージ。OtherIndex = (int)DamageCause、Value = ダメージ量。</summary>
+        DurabilityDamaged,
+        /// <summary>危険区間での重大事故。Value = 区間の危険度。</summary>
+        CourseAccident,
+        /// <summary>リタイア。Value = 進捗。</summary>
+        Retire,
+        /// <summary>ロスト（02 §11）。OtherIndex = (int)DamageCause。</summary>
+        Lost,
         /// <summary>ゴールした。Value = ゴールタイム（秒）。</summary>
         Finish,
         /// <summary>制限時間でレースを打ち切った。</summary>

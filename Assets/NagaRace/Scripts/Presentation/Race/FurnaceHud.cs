@@ -21,6 +21,8 @@ namespace NagaRace.Presentation.Race
         private static readonly Color CooldownColor = new Color(0.35f, 0.55f, 0.75f);
         private static readonly Color BrokenColor = new Color(0.35f, 0.12f, 0.1f);
 
+        private Image _durabilityFill;
+        private Text _durabilityText;
         private Image _gaugeFill;
         private Text _gaugeText;
         private Image _buttonImage;
@@ -51,6 +53,11 @@ namespace NagaRace.Presentation.Race
             // 始動ライン（葉力50）
             UiFactory.Panel("Threshold", gaugeBack.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(4f, 40f), Color.white);
             _gaugeText = UiFactory.Label("LeafLabel", gaugeBack.transform, font, 24, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 4f), new Vector2(300f, 32f), Color.white);
+
+            // 耐久（03 §7 下部）
+            var durabilityBack = UiFactory.Panel("Durability", safeRoot, bottom, bottom, new Vector2(-150f, 8f), new Vector2(_gaugeWidth, 14f), new Color(0f, 0f, 0f, 0.55f));
+            _durabilityFill = UiFactory.Panel("Fill", durabilityBack.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(_gaugeWidth, 14f), new Color(0.95f, 0.4f, 0.4f));
+            _durabilityText = UiFactory.Label("DurabilityLabel", durabilityBack.transform, font, 18, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(200f, 20f), Color.white);
 
             // 葉脈炉ボタン（タップ / クリック）
             _buttonImage = UiFactory.Panel("FurnaceButton", safeRoot, bottom, bottom, new Vector2(240f, 24f), new Vector2(240f, 110f), DisabledColor);
@@ -86,6 +93,10 @@ namespace NagaRace.Presentation.Race
             _gaugeFill.rectTransform.sizeDelta = new Vector2(_gaugeWidth * ratio, 30f);
             _gaugeFill.color = racer.LeafPower >= minimumLeafPower ? GaugeColor : GaugeColor * 0.7f;
             _gaugeText.text = $"葉力 <b>{racer.LeafPower:0}</b>";
+            float durabilityRatio = Mathf.Clamp01((float)(racer.CurrentDurability / racer.Entrant.MaxDurability));
+            _durabilityFill.rectTransform.sizeDelta = new Vector2(_gaugeWidth * durabilityRatio, 14f);
+            _durabilityFill.color = durabilityRatio < 0.2f ? new Color(1f, 0.15f, 0.1f) : (durabilityRatio < 0.4f ? new Color(1f, 0.6f, 0.2f) : new Color(0.95f, 0.45f, 0.45f));
+            _durabilityText.text = $"耐久 {racer.CurrentDurability:0}/{racer.Entrant.MaxDurability}";
             _autoBadge.text = racer.AutoControl ? "おまかせ中" : string.Empty;
 
             bool flash = Mathf.Repeat(Time.unscaledTime * 6f, 1f) < 0.5f;

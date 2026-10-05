@@ -39,7 +39,7 @@ namespace NagaRace.Domain.Race
         {
             double flowRate = MathUtil.LerpByStat(_balance.Stats.FlowRateRange, entrant.Stats.FlowSpeed);
             double condition = Lookup(_balance.Condition.SpeedModifier, entrant.Condition.ToString(), 1.0);
-            return flowRate * condition * FatigueModifier(entrant.Fatigue) * AffinityModifier(entrant.Affinities[_distanceAffinity]);
+            return flowRate * condition * FatigueModifier(entrant.Fatigue) * AffinityModifier(entrant.Affinities[_distanceAffinity]) * entrant.SpeedMultiplier;
         }
 
         /// <summary>

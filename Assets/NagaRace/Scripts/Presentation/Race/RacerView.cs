@@ -14,6 +14,7 @@ namespace NagaRace.Presentation.Race
         private Renderer _bodyRenderer;
         private MaterialPropertyBlock _block;
         private NagaRace.Domain.Race.FurnacePhase _furnacePhase;
+        private bool _out;
         private Transform _marker;
         private Transform _ring;
         private float _bobPhase;
@@ -71,6 +72,12 @@ namespace NagaRace.Presentation.Race
             _furnacePhase = phase;
         }
 
+        /// <summary>リタイア / ロストした出走者は色を落とす。</summary>
+        public void SetOut(bool isOut)
+        {
+            _out = isOut;
+        }
+
         private void LateUpdate()
         {
             if (_bodyRenderer == null) return;
@@ -90,6 +97,7 @@ namespace NagaRace.Presentation.Race
                     break;
             }
 
+            if (_out) color = Color.Lerp(color, new Color(0.55f, 0.55f, 0.55f), 0.7f);
             _block.SetColor(BaseColorId, color);
             _bodyRenderer.SetPropertyBlock(_block);
         }

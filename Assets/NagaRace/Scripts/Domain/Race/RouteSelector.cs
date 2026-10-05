@@ -110,7 +110,7 @@ namespace NagaRace.Domain.Race
             double lookAhead = _balance.Route.CrowdLookAheadMeters;
             foreach (var other in racers)
             {
-                if (other == self || other.IsFinished) continue;
+                if (other == self || other.IsOut) continue;
                 if (other.Segment == option)
                 {
                     crowd++;

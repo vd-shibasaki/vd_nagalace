@@ -45,6 +45,7 @@ namespace NagaRace.Tests.PlayMode
             for (int course = 0; course < presenter.CourseIds.Count; course++)
             {
                 presenter.StartRace(course, 3);
+                presenter.ConfirmPanel();
                 presenter.PlaybackSpeed = 4f;
                 int frames = 0;
                 int outOfView = 0;
@@ -72,6 +73,7 @@ namespace NagaRace.Tests.PlayMode
         {
             var presenter = Object.FindFirstObjectByType<RacePresenter>();
             presenter.StartRace(0, 5);
+            presenter.ConfirmPanel();
             presenter.PlaybackSpeed = 4f;
             presenter.CameraController.Mode = RaceCameraMode.WidePack;
             for (int i = 0; i < 30; i++) yield return null;
@@ -93,6 +95,7 @@ namespace NagaRace.Tests.PlayMode
         {
             var presenter = Object.FindFirstObjectByType<RacePresenter>();
             presenter.StartRace(0, 7);
+            presenter.ConfirmPanel();
             presenter.PlaybackSpeed = 4f;
             var sim = presenter.Simulator;
             var me = sim.Racers[presenter.PlayerIndex];
@@ -132,11 +135,42 @@ namespace NagaRace.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator H03_Lostの可能性があるレースは危険度を確認してから始まる()
+        {
+            var presenter = Object.FindFirstObjectByType<RacePresenter>();
+            int rapid = presenter.CourseIds.ToList().IndexOf("test_rapid");
+            presenter.SetPlayerCondition(15, 80);
+            presenter.StartRace(rapid, 1);
+            Assert.IsTrue(presenter.IsWaitingRiskConfirm);
+            Assert.AreEqual(RiskLevel.Extreme, presenter.Risk.Level);
+            Assert.IsTrue(presenter.Hud.IsRiskPanelVisible);
+
+            for (int i = 0; i < 30; i++) yield return null;
+            Assert.AreEqual(0, presenter.Simulator.Tick, "確認前にレースが始まっている");
+
+            presenter.PressFurnace(); // Space と同じ操作で出走を確定
+            for (int i = 0; i < 30; i++) yield return null;
+            Assert.Greater(presenter.Simulator.Tick, 0);
+            Assert.IsFalse(presenter.Hud.IsRiskPanelVisible);
+
+            // 安全なコースと十分な耐久なら確認なしで始まる（危険度は表示する）
+            int straight = presenter.CourseIds.ToList().IndexOf("test_straight");
+            presenter.SetPlayerCondition(100, 0);
+            presenter.StartRace(straight, 1);
+            Assert.IsFalse(presenter.IsWaitingRiskConfirm);
+            Assert.IsFalse(presenter.Risk.LostPossible);
+            Assert.IsTrue(presenter.Hud.IsRiskPanelVisible);
+            for (int i = 0; i < 10; i++) yield return null;
+            Assert.Greater(presenter.Simulator.Tick, 0);
+        }
+
+        [UnityTest]
         public IEnumerator おまかせ炉ならプレイヤーも炉を使う()
         {
             var presenter = Object.FindFirstObjectByType<RacePresenter>();
             presenter.AutoFurnace = true;
             presenter.StartRace(0, 9);
+            presenter.ConfirmPanel();
             presenter.PlaybackSpeed = 8f;
             int frames = 0;
             while (!presenter.Simulator.IsFinished && frames++ < MaxFrames) yield return null;
@@ -164,6 +198,9 @@ namespace NagaRace.Tests.PlayMode
             for (int course = 0; course < presenter.CourseIds.Count; course++)
             {
                 presenter.StartRace(course, 3);
+                yield return null;
+                Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_0_risk.png"));
+                presenter.ConfirmPanel();
                 presenter.PlaybackSpeed = 1f;
                 for (int i = 0; i < 120; i++) yield return null;
                 Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_1_start.png"));
@@ -188,7 +225,7 @@ namespace NagaRace.Tests.PlayMode
                     presenter.PressFurnace();
                     for (int i = 0; i < 40; i++) yield return null;
                     Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_2b_furnace.png"));
-                    while (me.FurnacePhase != FurnacePhase.ActiveRisk && (me.IsFurnaceActive || me.FurnacePhase == FurnacePhase.Ignition)) yield return null;
+                    while (!me.IsOut && me.FurnacePhase != FurnacePhase.ActiveRisk && (me.IsFurnaceActive || me.FurnacePhase == FurnacePhase.Ignition)) yield return null;
                     for (int i = 0; i < 10; i++) yield return null;
                     Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_2c_overflow.png"));
                     presenter.PressFurnace();

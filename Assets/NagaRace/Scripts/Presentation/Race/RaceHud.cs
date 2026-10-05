@@ -36,6 +36,11 @@ namespace NagaRace.Presentation.Race
         private readonly List<Text> _noticeTexts = new List<Text>();
         private readonly List<float> _noticeTimers = new List<float>();
         private GameObject _resultPanel;
+        private GameObject _riskPanel;
+        private Text _riskText;
+        private Image _riskImage;
+        private GameObject _lostPanel;
+        private Text _lostText;
         private Text _resultText;
         private RectTransform _minimapRoot;
         private Canvas _canvas;
@@ -77,6 +82,68 @@ namespace NagaRace.Presentation.Race
             BuildBottom();
             BuildPlayerLabel(playerName);
             BuildResultPanel();
+            BuildRiskPanel();
+            BuildLostPanel();
+        }
+
+        /// <summary>危険度パネル・ロスト画面のクリック。</summary>
+        public event System.Action PanelClicked;
+
+        public bool IsRiskPanelVisible => _riskPanel != null && _riskPanel.activeSelf;
+        public bool IsLostPanelVisible => _lostPanel != null && _lostPanel.activeSelf;
+
+        /// <summary>出走前の危険度（H-03）。needsConfirm なら「Space / クリックで出走」を表示。</summary>
+        public void ShowRisk(string label, string reasons, Color color, bool needsConfirm)
+        {
+            _riskPanel.SetActive(true);
+            _riskImage.color = new Color(color.r * 0.35f, color.g * 0.35f, color.b * 0.35f, 0.92f);
+            _riskText.text = $"<size=30>出走前の危険度</size>\n<size=64><b><color=#{ColorUtility.ToHtmlStringRGB(color)}>{label}</color></b></size>\n{reasons}"
+                + (needsConfirm ? "\n\n<size=26>ロストの可能性があります。Space / クリックで出走</size>" : string.Empty);
+        }
+
+        public void HideRisk()
+        {
+            _riskPanel.SetActive(false);
+        }
+
+        /// <summary>ロスト専用の画面（03 §9: 過度に悲惨にしない・静かな水面・戦績・スキップ可）。</summary>
+        public void ShowLost(string text)
+        {
+            _resultPanel.SetActive(false);
+            _lostPanel.SetActive(true);
+            _lostText.text = text;
+        }
+
+        public void HideLost()
+        {
+            _lostPanel.SetActive(false);
+        }
+
+        private void BuildRiskPanel()
+        {
+            var center = new Vector2(0.5f, 0.5f);
+            _riskImage = UiFactory.Panel("RiskPanel", _safeRoot, center, center, new Vector2(0f, 60f), new Vector2(760f, 330f), new Color(0f, 0f, 0f, 0.9f));
+            _riskText = UiFactory.Label("RiskText", _riskImage.transform, _font, 32, TextAnchor.MiddleCenter, center, center, Vector2.zero, new Vector2(720f, 310f), Color.white);
+            _riskPanel = _riskImage.gameObject;
+            _riskImage.raycastTarget = true;
+            _riskPanel.AddComponent<Button>().onClick.AddListener(() => PanelClicked?.Invoke());
+            _riskPanel.SetActive(false);
+        }
+
+        private void BuildLostPanel()
+        {
+            // 画面全体を静かな水面色で覆う
+            var panel = UiFactory.Panel("LostPanel", _canvas.transform, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Color(0.08f, 0.16f, 0.24f, 0.94f));
+            panel.rectTransform.anchorMin = Vector2.zero;
+            panel.rectTransform.anchorMax = Vector2.one;
+            panel.rectTransform.offsetMin = Vector2.zero;
+            panel.rectTransform.offsetMax = Vector2.zero;
+            var center = new Vector2(0.5f, 0.5f);
+            _lostText = UiFactory.Label("LostText", panel.transform, _font, 34, TextAnchor.MiddleCenter, center, center, Vector2.zero, new Vector2(1100f, 700f), new Color(0.9f, 0.95f, 1f));
+            _lostPanel = panel.gameObject;
+            panel.raycastTarget = true;
+            _lostPanel.AddComponent<Button>().onClick.AddListener(() => PanelClicked?.Invoke());
+            _lostPanel.SetActive(false);
         }
 
         public RectTransform MinimapRoot => _minimapRoot;
@@ -108,6 +175,15 @@ namespace NagaRace.Presentation.Race
                 _rowSwatches[i].color = row.Color;
                 _rowBackgrounds[i].color = row.IsPlayer ? new Color(1f, 0.78f, 0.1f, 0.85f) : new Color(0f, 0f, 0f, 0.35f);
                 _rowTexts[i].color = row.IsPlayer ? new Color(0.15f, 0.1f, 0f) : Color.white;
+            }
+        }
+
+        public void ClearNotices()
+        {
+            for (int i = 0; i < _noticeTexts.Count; i++)
+            {
+                _noticeTexts[i].text = string.Empty;
+                _noticeTimers[i] = 0f;
             }
         }
 

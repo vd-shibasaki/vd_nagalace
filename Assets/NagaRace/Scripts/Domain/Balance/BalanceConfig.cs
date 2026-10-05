@@ -24,8 +24,12 @@ namespace NagaRace.Domain.Balance
         public FurnaceBalance Furnace { get; set; } = new FurnaceBalance();
         public DurabilityBalance Durability { get; set; } = new DurabilityBalance();
         public LostBalance Lost { get; set; } = new LostBalance();
+        public AftermathBalance Aftermath { get; set; } = new AftermathBalance();
+        public RiskBalance Risk { get; set; } = new RiskBalance();
         public TrainingBalance Training { get; set; } = new TrainingBalance();
         public CalendarBalance Calendar { get; set; } = new CalendarBalance();
+        public WeatherBalance Weather { get; set; } = new WeatherBalance();
+        public GrowthBalance Growth { get; set; } = new GrowthBalance();
     }
 
     public sealed class RaceBalance
@@ -181,13 +185,40 @@ namespace NagaRace.Domain.Balance
         public double LongOverrunSeconds { get; set; }
     }
 
-    // TODO(M4): 耐久・Lost 実装時に参照する。M1 では読込のみ。
     public sealed class DurabilityBalance
     {
         public int GoodMin { get; set; }
         public int LightDamageMin { get; set; }
         public int DamagedMin { get; set; }
         public int DangerMin { get; set; }
+        public double StumbleDamage { get; set; }
+        public Dictionary<string, double> FailureDamage { get; set; } = new Dictionary<string, double>();
+        /// <summary>危険度3以上の Segment で姿勢を崩したときに重大事故になる確率（危険度ごと）。</summary>
+        public Dictionary<string, double> AccidentChanceOnStumbleByDanger { get; set; } = new Dictionary<string, double>();
+        public double AccidentDamage { get; set; }
+        /// <summary>耐久が lightDamageMin 未満のときの事故率倍率。</summary>
+        public double LowDurabilityAccidentMultiplier { get; set; }
+        /// <summary>耐久が十分なとき（lightDamageMin 以上）の事故率倍率。</summary>
+        public double HealthyAccidentMultiplier { get; set; }
+        /// <summary>1レースでこれ以上の耐久ダメージを受けると大怪我（最大耐久が下がる）。</summary>
+        public double InjuryDamageThreshold { get; set; }
+        public double InjuryMaxDurabilityLossRatio { get; set; }
+        public int FurnaceDurabilityLossOnDamage { get; set; }
+    }
+
+    /// <summary>レース後の反映（疲労など）。</summary>
+    public sealed class AftermathBalance
+    {
+        public double RaceFatigue { get; set; }
+        public double FatiguePerFurnaceSecond { get; set; }
+        public double FatiguePerOverflowSecond { get; set; }
+    }
+
+    /// <summary>出走前の危険度表示（04 §9.2）。</summary>
+    public sealed class RiskBalance
+    {
+        public int CautionFatigueMin { get; set; }
+        public int ExtremeFactorCount { get; set; }
     }
 
     public sealed class LostBalance
@@ -198,10 +229,54 @@ namespace NagaRace.Domain.Balance
         public double ChanceOnCandidate { get; set; }
     }
 
+    /// <summary>育成「ならし」（05 §3）。</summary>
     public sealed class TrainingBalance
     {
         public int FatigueMax { get; set; }
         public int HighFatigueThreshold { get; set; }
+        /// <summary>重み1.0のならし1回で上がる能力の目安。</summary>
+        public double BaseGain { get; set; }
+        public double[] RandomRange { get; set; }
+        public Dictionary<string, double> ConditionMultiplier { get; set; } = new Dictionary<string, double>();
+        public double FatiguePenaltyStart { get; set; }
+        public double FatigueMultiplierAtMax { get; set; }
+        /// <summary>同じならしを続けたときの倍率（1回目, 2回目, ...）。最後の値がそれ以降に使われる。</summary>
+        public double[] MonotonyMultipliers { get; set; }
+        /// <summary>高い能力ほど伸びにくくする指数（1 - (値/上限)^指数）。</summary>
+        public double DiminishingExponent { get; set; }
+        public double StatSoftCap { get; set; }
+        public double InjuryChancePerRisk { get; set; }
+        public double InjuryFatigueMultiplierAtMax { get; set; }
+        public double InjuryDamagePerRisk { get; set; }
+        public int DailyDurabilityRecovery { get; set; }
+        public int DailyFatigueRecovery { get; set; }
+        public double ConditionDriftChance { get; set; }
+        public double HighFatigueConditionDropChance { get; set; }
+        public double BodyTraitThreshold { get; set; }
+    }
+
+    /// <summary>天気（季節ごとの出現率）と水量。</summary>
+    public sealed class WeatherBalance
+    {
+        public Dictionary<string, Dictionary<string, double>> SeasonWeights { get; set; } = new Dictionary<string, Dictionary<string, double>>();
+        public Dictionary<string, double> HighWaterChance { get; set; } = new Dictionary<string, double>();
+        public Dictionary<string, double> LowWaterChance { get; set; } = new Dictionary<string, double>();
+    }
+
+    /// <summary>成長フェーズ（02 §6, 09 M6）。</summary>
+    public sealed class GrowthBalance
+    {
+        public Dictionary<string, GrowthTypeBalance> Types { get; set; } = new Dictionary<string, GrowthTypeBalance>();
+        public Dictionary<string, double> TrainingMultiplier { get; set; } = new Dictionary<string, double>();
+        public Dictionary<string, double> RaceSpeedMultiplier { get; set; } = new Dictionary<string, double>();
+        public Dictionary<string, double> DailyDeclineChance { get; set; } = new Dictionary<string, double>();
+        public string[] DeclineStats { get; set; }
+    }
+
+    public sealed class GrowthTypeBalance
+    {
+        /// <summary>フェーズ名 → [最小日数, 最大日数]。</summary>
+        public Dictionary<string, int[]> PhaseDays { get; set; } = new Dictionary<string, int[]>();
     }
 
     public sealed class CalendarBalance

@@ -20,6 +20,10 @@ namespace NagaRace.Tests.EditMode
         private static BalanceConfig _balance;
         private static Dictionary<string, RaceCourse> _courses;
         private static List<SpeciesDefinition> _species;
+        private static NagaRace.Domain.Training.TrainingCatalog _trainings;
+
+        public static NagaRace.Domain.Training.TrainingCatalog Trainings =>
+            _trainings ?? (_trainings = JsonTrainingParser.Parse(File.ReadAllText(Path.Combine(Root, "Data/Trainings/trainings.json"))));
 
         public static BalanceConfig Balance =>
             _balance ?? (_balance = JsonBalanceParser.Parse(File.ReadAllText(Path.Combine(Root, "Config/game_balance_defaults.json"))));

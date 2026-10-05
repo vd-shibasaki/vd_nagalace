@@ -44,6 +44,32 @@ namespace NagaRace.Domain.Race
         public int Rank { get; internal set; }
 
         public bool IsFinished { get; internal set; }
+
+        /// <summary>耐久0・重大事故でリタイアした（Lost を含む）。</summary>
+        public bool IsRetired { get; internal set; }
+        /// <summary>Lost 判定でロストした（02 §11）。</summary>
+        public bool IsLost { get; internal set; }
+        internal int RetiredAtTick { get; set; }
+
+        /// <summary>レースから外れた（ゴール済み or リタイア）。</summary>
+        public bool IsOut => IsFinished || IsRetired;
+
+        // ---- 耐久（04 §6, §9） ----
+
+        /// <summary>このレースで受けた耐久ダメージ。</summary>
+        public double DurabilityDamage { get; internal set; }
+        /// <summary>現在の耐久（出走時の耐久 − ダメージ）。</summary>
+        public double CurrentDurability => System.Math.Max(0.0, Entrant.Durability - DurabilityDamage);
+        public bool HadAccident { get; internal set; }
+
+        // ---- 炉の使用記録（レース後の疲労・アルバムに使う） ----
+
+        public double FurnaceSecondsTotal { get; internal set; }
+        public double OverflowSecondsTotal { get; internal set; }
+        public double MaxFurnaceSeconds { get; internal set; }
+        /// <summary>炉耐久が減る故障（FurnaceDamage 以上）があった。</summary>
+        public bool FurnaceDamaged { get; internal set; }
+        public FurnaceFailure WorstFailure { get; internal set; }
         public double FinishTimeSeconds { get; internal set; }
 
         public double StunRemaining { get; internal set; }

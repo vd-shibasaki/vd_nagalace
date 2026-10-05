@@ -45,6 +45,7 @@ namespace NagaRace.Domain.Race
             _routes = new RouteSelector(balance, course, _speed);
             _furnace = new FurnaceRules(balance);
             _chancePoints = CreateChancePoints(seed);
+            InitializeDurability();
 
             int count = entrants.Count;
             _racers = new List<RacerState>(count);
@@ -118,7 +119,7 @@ namespace NagaRace.Domain.Race
             {
                 var racer = _racers[i];
                 _pendingSpeed[i] = racer.CurrentSpeed;
-                if (racer.IsFinished) continue;
+                if (racer.IsOut) continue;
                 Decide(racer, tick, dt);
             }
 
@@ -126,7 +127,7 @@ namespace NagaRace.Domain.Race
             for (int i = 0; i < _racers.Count; i++)
             {
                 var racer = _racers[i];
-                if (racer.IsFinished) continue;
+                if (racer.IsOut) continue;
                 Move(racer, _pendingSpeed[i], tick, dt);
             }
 
@@ -155,7 +156,18 @@ namespace NagaRace.Domain.Race
             for (int rank = 1; rank <= _racers.Count; rank++)
             {
                 var racer = RacerAtRank(rank);
-                placings.Add(new RacePlacing(racer.Index, racer.Entrant.Id, rank, racer.IsFinished, racer.FinishTimeSeconds));
+                placings.Add(new RacePlacing(racer.Index, racer.Entrant.Id, rank, racer.IsFinished, racer.FinishTimeSeconds)
+                {
+                    Retired = racer.IsRetired,
+                    Lost = racer.IsLost,
+                    DurabilityDamage = racer.DurabilityDamage,
+                    FurnaceSeconds = racer.FurnaceSecondsTotal,
+                    OverflowSeconds = racer.OverflowSecondsTotal,
+                    MaxFurnaceSeconds = racer.MaxFurnaceSeconds,
+                    FurnaceDamaged = racer.FurnaceDamaged,
+                    WorstFailure = racer.WorstFailure,
+                    HadAccident = racer.HadAccident,
+                });
             }
 
             return new RaceResult(Seed, Tick, TickRate, TimedOut, placings, _events.ToArray(), _inputLog.ToArray());
@@ -166,6 +178,7 @@ namespace NagaRace.Domain.Race
             var stats = _balance.Stats;
             var lane = _balance.Lane;
             UpdateLeafPowerAndFurnace(racer, tick, dt);
+            if (racer.IsOut) return;
             racer.TargetSpeed = _speed.TargetSpeed(racer) * FurnaceSpeedMultiplier(racer);
 
             // 姿勢崩れ。乱数は毎Tick必ず1回引く（状況で消費数を変えず再現性を保つ）
@@ -175,6 +188,9 @@ namespace NagaRace.Domain.Race
                 _pendingSpeed[racer.Index] = Math.Min(_pendingSpeed[racer.Index], racer.CurrentSpeed * (1.0 - stats.StumbleSlowdown));
                 racer.StunRemaining = MathUtil.LerpByStat(stats.StunSecondsByStability, racer.Entrant.Stats.Stability);
                 _events.Add(new RaceEvent(tick, RaceEventType.Stumble, racer.Index, racer.Segment.Id, -1, racer.CurrentSpeed));
+                ApplyDamage(racer, _balance.Durability.StumbleDamage, DamageCause.Stumble, tick, majorIncident: false);
+                CheckAccident(racer, tick);
+                if (racer.IsOut) return;
             }
 
             int blockerIndex = FindBlocker(racer);
@@ -206,6 +222,8 @@ namespace NagaRace.Domain.Race
                 _pendingSpeed[racer.Index] = Math.Min(_pendingSpeed[racer.Index], racer.CurrentSpeed * (1.0 - slowdown * variance));
                 racer.StunRemaining = MathUtil.LerpByStat(stats.StunSecondsByStability, racer.Entrant.Stats.Stability);
                 _events.Add(new RaceEvent(tick, RaceEventType.Contact, racer.Index, racer.Segment.Id, blocker.Index, speedDiff));
+                ApplyDamage(racer, _balance.Race.CollisionBaseDurabilityDamage, DamageCause.Contact, tick, majorIncident: false);
+                if (racer.IsOut) return;
             }
 
             racer.TargetSpeed = Math.Min(racer.TargetSpeed, blocker.CurrentSpeed);
@@ -242,6 +260,9 @@ namespace NagaRace.Domain.Race
                     double fraction = move > 0 ? (move - overshoot) / move : 1.0;
                     racer.FinishTimeSeconds = (tick - 1 + fraction) * dt;
                     racer.IsFinished = true;
+                    // ゴールしたら炉も止める（稼働状態のまま残さない）
+                    if (racer.IsFurnaceActive || racer.FurnacePhase == FurnacePhase.Ignition) racer.FurnacePhase = FurnacePhase.Cooldown;
+                    racer.IsChanceOpen = false;
                     racer.Offset = racer.Segment.Length;
                     racer.Progress = 1.0;
                     racer.PlannedNext = null;
@@ -290,7 +311,7 @@ namespace NagaRace.Domain.Race
             for (int i = 0; i < _racers.Count; i++)
             {
                 var racer = _racers[i];
-                if (!racer.NeedsRoutePlan || racer.IsFinished) continue;
+                if (!racer.NeedsRoutePlan || racer.IsOut) continue;
                 _newPlans[i] = _routes.Choose(racer, _racers, _plannedSnapshot);
             }
 
@@ -315,7 +336,7 @@ namespace NagaRace.Domain.Race
             for (int i = 0; i < _racers.Count; i++)
             {
                 var other = _racers[i];
-                if (other == racer || other.IsFinished) continue;
+                if (other == racer || other.IsOut) continue;
 
                 double gap;
                 double otherLateralMeters;
@@ -392,7 +413,7 @@ namespace NagaRace.Domain.Race
             double candidateMeters = LateralMeters(racer.Segment, lateral);
             foreach (var other in _racers)
             {
-                if (other == racer || other.IsFinished || other.Segment != racer.Segment) continue;
+                if (other == racer || other.IsOut || other.Segment != racer.Segment) continue;
                 double gap = other.Offset - racer.Offset;
                 if (gap <= -lane.RacerWidthMeters || gap >= lane.ClearLookAheadMeters) continue;
                 if (Math.Abs(LateralMeters(other.Segment, other.Lateral) - candidateMeters) < lane.RacerWidthMeters) return false;
@@ -441,6 +462,9 @@ namespace NagaRace.Domain.Race
         private static int Compare(RacerState a, RacerState b)
         {
             if (a.IsFinished != b.IsFinished) return a.IsFinished ? -1 : 1;
+            // リタイアは最下位。後からリタイアした方が上（04 §11）
+            if (a.IsRetired != b.IsRetired) return a.IsRetired ? 1 : -1;
+            if (a.IsRetired && a.RetiredAtTick != b.RetiredAtTick) return a.RetiredAtTick > b.RetiredAtTick ? -1 : 1;
             if (a.IsFinished)
             {
                 // ミリ秒まで同じなら枠番順（04 §11）
@@ -460,7 +484,7 @@ namespace NagaRace.Domain.Race
         {
             foreach (var racer in _racers)
             {
-                if (!racer.IsFinished) return false;
+                if (!racer.IsOut) return false;
             }
 
             return true;

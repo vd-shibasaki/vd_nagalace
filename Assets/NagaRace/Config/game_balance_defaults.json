@@ -30,8 +30,8 @@
       "D": 30
     },
     "flowRateRange": [
-      0.94,
-      1.06
+      0.93,
+      1.07
     ],
     "accelRateRange": [
       1.5,
@@ -236,7 +236,24 @@
     "goodMin": 70,
     "lightDamageMin": 40,
     "damagedMin": 20,
-    "dangerMin": 1
+    "dangerMin": 1,
+    "stumbleDamage": 1,
+    "failureDamage": {
+      "MinorDamage": 2,
+      "FurnaceDamage": 4,
+      "Blow": 15,
+      "Critical": 25
+    },
+    "accidentChanceOnStumbleByDanger": {
+      "3": 0.15,
+      "4": 0.3
+    },
+    "accidentDamage": 20,
+    "lowDurabilityAccidentMultiplier": 2.0,
+    "injuryDamageThreshold": 25,
+    "injuryMaxDurabilityLossRatio": 0.4,
+    "furnaceDurabilityLossOnDamage": 5,
+    "healthyAccidentMultiplier": 0.2
   },
   "lost": {
     "candidateCourseDangerMin": 3,
@@ -246,7 +263,37 @@
   },
   "training": {
     "fatigueMax": 100,
-    "highFatigueThreshold": 70
+    "highFatigueThreshold": 70,
+    "baseGain": 2.4,
+    "randomRange": [
+      0.7,
+      1.3
+    ],
+    "conditionMultiplier": {
+      "Excellent": 1.2,
+      "Good": 1.1,
+      "Normal": 1.0,
+      "Poor": 0.85,
+      "Terrible": 0.7
+    },
+    "fatiguePenaltyStart": 40,
+    "fatigueMultiplierAtMax": 0.35,
+    "monotonyMultipliers": [
+      1.0,
+      0.85,
+      0.7,
+      0.55
+    ],
+    "diminishingExponent": 1.6,
+    "statSoftCap": 100,
+    "injuryChancePerRisk": 0.04,
+    "injuryFatigueMultiplierAtMax": 3.0,
+    "injuryDamagePerRisk": 6,
+    "dailyDurabilityRecovery": 3,
+    "dailyFatigueRecovery": 2,
+    "conditionDriftChance": 0.25,
+    "highFatigueConditionDropChance": 0.5,
+    "bodyTraitThreshold": 60
   },
   "calendar": {
     "daysPerWeek": 4,
@@ -261,5 +308,160 @@
     "trailingRankFrom": 5,
     "trailingDangerAversionMul": 0.8,
     "stumbleTimeLossSeconds": 0.8
+  },
+  "aftermath": {
+    "raceFatigue": 12,
+    "fatiguePerFurnaceSecond": 0.8,
+    "fatiguePerOverflowSecond": 3.0
+  },
+  "risk": {
+    "cautionFatigueMin": 70,
+    "extremeFactorCount": 2
+  },
+  "weather": {
+    "seasonWeights": {
+      "Spring": {
+        "Sunny": 40,
+        "Cloudy": 25,
+        "Rain": 20,
+        "HeavyRain": 5,
+        "Wind": 10
+      },
+      "Summer": {
+        "Sunny": 50,
+        "Cloudy": 15,
+        "Rain": 15,
+        "HeavyRain": 10,
+        "Wind": 10
+      },
+      "Autumn": {
+        "Sunny": 35,
+        "Cloudy": 25,
+        "Rain": 15,
+        "HeavyRain": 5,
+        "Wind": 20
+      },
+      "Winter": {
+        "Sunny": 30,
+        "Cloudy": 40,
+        "Rain": 10,
+        "HeavyRain": 2,
+        "Wind": 18
+      }
+    },
+    "highWaterChance": {
+      "Rain": 0.4,
+      "HeavyRain": 0.9
+    },
+    "lowWaterChance": {
+      "Sunny": 0.25
+    }
+  },
+  "growth": {
+    "types": {
+      "Early": {
+        "phaseDays": {
+          "Young": [
+            6,
+            9
+          ],
+          "Growing": [
+            14,
+            22
+          ],
+          "Peak": [
+            16,
+            26
+          ],
+          "Autumn": [
+            12,
+            18
+          ]
+        }
+      },
+      "Normal": {
+        "phaseDays": {
+          "Young": [
+            8,
+            12
+          ],
+          "Growing": [
+            18,
+            30
+          ],
+          "Peak": [
+            20,
+            35
+          ],
+          "Autumn": [
+            12,
+            20
+          ]
+        }
+      },
+      "Late": {
+        "phaseDays": {
+          "Young": [
+            10,
+            14
+          ],
+          "Growing": [
+            26,
+            38
+          ],
+          "Peak": [
+            18,
+            30
+          ],
+          "Autumn": [
+            12,
+            20
+          ]
+        }
+      },
+      "Lasting": {
+        "phaseDays": {
+          "Young": [
+            8,
+            12
+          ],
+          "Growing": [
+            18,
+            28
+          ],
+          "Peak": [
+            30,
+            45
+          ],
+          "Autumn": [
+            16,
+            24
+          ]
+        }
+      }
+    },
+    "trainingMultiplier": {
+      "Young": 0.8,
+      "Growing": 1.3,
+      "Peak": 1.0,
+      "Autumn": 0.55,
+      "Withered": 0.25
+    },
+    "raceSpeedMultiplier": {
+      "Young": 0.985,
+      "Growing": 0.995,
+      "Peak": 1.0,
+      "Autumn": 0.99,
+      "Withered": 0.97
+    },
+    "dailyDeclineChance": {
+      "Autumn": 0.3,
+      "Withered": 0.6
+    },
+    "declineStats": [
+      "FlowSpeed",
+      "Acceleration",
+      "Stability"
+    ]
   }
 }

@@ -24,8 +24,10 @@ namespace NagaRace.Domain.Race
             bool isPlayer = false,
             int durability = 100,
             int maxDurability = 100,
-            bool autoFurnace = false)
+            bool autoFurnace = false,
+            double speedMultiplier = 1.0)
         {
+            SpeedMultiplier = speedMultiplier;
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Name = name ?? id;
             SpeciesId = speciesId ?? string.Empty;
@@ -59,6 +61,16 @@ namespace NagaRace.Domain.Race
         public int MaxDurability { get; }
         /// <summary>プレイヤーの「おまかせ炉」設定（03 §6）。NPC は常に AI が炉を操作する。</summary>
         public bool AutoFurnace { get; }
+        /// <summary>成長フェーズによる速度倍率（09 M6）。</summary>
+        public double SpeedMultiplier { get; }
+
+        /// <summary>育成中の個体から出走データを作る（出走時点のスナップショット）。</summary>
+        /// <param name="phaseSpeedMultiplier">成長フェーズの速度倍率（GrowthRules.RaceSpeedMultiplier）。</param>
+        public static RaceEntrant FromCharacter(CharacterState c, bool isPlayer, AiStyle aiStyle = AiStyle.Standard, bool autoFurnace = false, double phaseSpeedMultiplier = 1.0)
+        {
+            return new RaceEntrant(c.Id, c.Name, c.SpeciesId, c.Stats, c.Affinities, c.Personality, aiStyle, c.Condition,
+                c.Fatigue, c.Furnace, isPlayer, c.Durability, c.MaxDurability, autoFurnace, phaseSpeedMultiplier);
+        }
 
         public RaceEntrant WithStats(CharacterStats stats) => Copy(stats: stats);
         public RaceEntrant WithPersonality(Personality personality) => Copy(personality: personality);
@@ -90,7 +102,8 @@ namespace NagaRace.Domain.Race
                 isPlayer ?? IsPlayer,
                 durability ?? Durability,
                 maxDurability ?? MaxDurability,
-                autoFurnace ?? AutoFurnace);
+                autoFurnace ?? AutoFurnace,
+                SpeedMultiplier);
         }
     }
 }

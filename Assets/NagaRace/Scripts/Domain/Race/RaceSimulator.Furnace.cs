@@ -35,7 +35,7 @@ namespace NagaRace.Domain.Race
         public bool CanActivateFurnace(int entrantIndex)
         {
             var racer = _racers[entrantIndex];
-            return !racer.IsFinished && racer.FurnacePhase == FurnacePhase.Ready && racer.LeafPower >= _furnace.MinimumLeafPower;
+            return !racer.IsOut && racer.FurnacePhase == FurnacePhase.Ready && racer.LeafPower >= _furnace.MinimumLeafPower;
         }
 
         private double[] CreateChancePoints(ulong seed)
@@ -64,7 +64,7 @@ namespace NagaRace.Domain.Race
             foreach (var (index, _, type) in _pendingInputs)
             {
                 var racer = _racers[index];
-                if (racer.IsFinished) continue;
+                if (racer.IsOut) continue;
                 _inputLog.Add(new RaceInput(tick, index, type));
                 switch (type)
                 {
@@ -102,6 +102,13 @@ namespace NagaRace.Domain.Race
 
             if (racer.AutoControl) RunFurnaceAi(racer, tick);
             UpdateFurnace(racer, tick, dt);
+        }
+
+        private void RecordFurnaceUse(RacerState racer, double dt)
+        {
+            racer.FurnaceSecondsTotal += dt;
+            if (racer.FurnacePhase == FurnacePhase.ActiveRisk) racer.OverflowSecondsTotal += dt;
+            racer.MaxFurnaceSeconds = Math.Max(racer.MaxFurnaceSeconds, racer.FurnaceActiveSeconds);
         }
 
         // ---------------- 葉力チャンス ----------------
@@ -212,6 +219,7 @@ namespace NagaRace.Domain.Race
                 case FurnacePhase.ActiveSafe:
                 case FurnacePhase.ActiveRisk:
                     racer.FurnaceActiveSeconds += dt;
+                    RecordFurnaceUse(racer, dt);
                     racer.LeafPower -= _furnace.DrainPerSecond * dt;
                     if (racer.LeafPower <= 0)
                     {
@@ -255,6 +263,8 @@ namespace NagaRace.Domain.Race
         private void ApplyFailure(RacerState racer, FurnaceFailure failure, int tick)
         {
             racer.LastFailure = failure;
+            if (failure > racer.WorstFailure) racer.WorstFailure = failure;
+            if (failure >= FurnaceFailure.FurnaceDamage) racer.FurnaceDamaged = true;
             _events.Add(new RaceEvent(tick, RaceEventType.FurnaceFailureOccurred, racer.Index, racer.Segment.Id, -1, (int)failure));
 
             double slowdown;
@@ -273,7 +283,6 @@ namespace NagaRace.Domain.Race
                     racer.FurnacePhase = FurnacePhase.Broken;
                     break;
                 default:
-                    // Blow / Critical。耐久ダメージ・リタイア・Lost 判定は M4 で追加する
                     slowdown = _furnace.BlowSlowdown;
                     stun = _furnace.BlowStunSeconds;
                     racer.FurnacePhase = FurnacePhase.Broken;
@@ -282,6 +291,14 @@ namespace NagaRace.Domain.Race
 
             _pendingSpeed[racer.Index] = Math.Min(_pendingSpeed[racer.Index], racer.CurrentSpeed * (1.0 - slowdown));
             racer.StunRemaining = Math.Max(racer.StunRemaining, stun);
+
+            // Blow は耐久0で Lost 判定（耐久0での大事故）、Critical は耐久に関係なく Lost 判定（葉脈炉重大破損）
+            bool major = failure >= FurnaceFailure.Blow;
+            ApplyDamage(racer, FailureDamage(failure), DamageCause.Furnace, tick, major);
+            if (failure == FurnaceFailure.Critical && !racer.IsOut)
+            {
+                TryLost(racer, DamageCause.Furnace, tick);
+            }
         }
 
         private double FurnaceSpeedMultiplier(RacerState racer)

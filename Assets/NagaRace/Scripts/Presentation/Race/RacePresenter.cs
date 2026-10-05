@@ -49,6 +49,9 @@ namespace NagaRace.Presentation.Race
         [SerializeField] private bool _showDebugPanel = true;
         [SerializeField] private bool _autoFurnace;
         [SerializeField] private AiStyle _playerAiStyle = AiStyle.Standard;
+        [SerializeField] private int _playerDurability = 100;
+        [SerializeField] private int _playerFatigue;
+        [SerializeField] private float _riskBannerSeconds = 2.5f;
 
         private RunRaceUseCase _useCase;
         private BalanceConfig _balance;
@@ -72,6 +75,10 @@ namespace NagaRace.Presentation.Race
         private RaceCameraController _cameraController;
         private FurnaceHud _furnaceHud;
         private RaceInputController _input;
+        private RiskReport _risk;
+        private bool _waitingRiskConfirm;
+        private float _riskBannerRemaining;
+        private bool _lostShown;
         private double _accumulator;
         private int _processedEvents;
         private int _playerIndex;
@@ -84,6 +91,15 @@ namespace NagaRace.Presentation.Race
         public int PlayerIndex => _playerIndex;
         public RaceCameraController CameraController => _cameraController;
         public FurnaceHud FurnaceHud => _furnaceHud;
+        public RiskReport Risk => _risk;
+        public bool IsWaitingRiskConfirm => _waitingRiskConfirm;
+
+        /// <summary>デバッグ・テスト用: 次のレースの自キャラの耐久と疲労。</summary>
+        public void SetPlayerCondition(int durability, int fatigue)
+        {
+            _playerDurability = durability;
+            _playerFatigue = fatigue;
+        }
 
         public bool AutoFurnace
         {
@@ -131,11 +147,34 @@ namespace NagaRace.Presentation.Race
             _input = gameObject.AddComponent<RaceInputController>();
             _input.FurnacePressed += PressFurnace;
             _input.ChargePressed += PressCharge;
+            _hud.PanelClicked += ConfirmPanel;
+        }
+
+        /// <summary>危険度の確認・ロスト画面のスキップ。</summary>
+        public void ConfirmPanel()
+        {
+            if (_waitingRiskConfirm)
+            {
+                _waitingRiskConfirm = false;
+                _hud.HideRisk();
+            }
+            else if (_hud.IsLostPanelVisible)
+            {
+                // 「思い出アルバムへ」: MVP ではアルバム画面が Phase2 のため、通常のリザルトを表示する
+                _hud.HideLost();
+                ShowResult();
+            }
         }
 
         /// <summary>葉脈炉ボタン。待機中なら始動、稼働中なら解除（「いつ始動し、いつ止めるか」だけを操作する）。</summary>
         public void PressFurnace()
         {
+            if (_waitingRiskConfirm || _hud.IsLostPanelVisible)
+            {
+                ConfirmPanel();
+                return;
+            }
+
             if (_simulator == null || _simulator.IsFinished) return;
             var me = _simulator.Racers[_playerIndex];
             if (me.IsFinished) return;
@@ -173,7 +212,7 @@ namespace NagaRace.Presentation.Race
                 // TODO(M8): 出走登録画面（SC-08）から渡す。現在は固定の自キャラ
                 new RaceEntrant("player", "アカネ", "maple", new CharacterStats(65, 70, 50, 50, 50, 60),
                     personality: Personality.Gambler, aiStyle: _playerAiStyle, furnace: new FurnaceStats(70, 60, 50, 50, 45),
-                    isPlayer: true, autoFurnace: _autoFurnace),
+                    isPlayer: true, durability: _playerDurability, autoFurnace: _autoFurnace, fatigue: _playerFatigue),
             };
             entrants.AddRange(NpcFactory.Generate(new NpcSpec(_species), 2026UL, _balance.Race.EntrantCount - 1));
 
@@ -182,7 +221,17 @@ namespace NagaRace.Presentation.Race
             _accumulator = 0;
             _processedEvents = 0;
             _resultShown = false;
+            _lostShown = false;
             _postFinishSeconds = 0;
+            _hud.HideLost();
+            _hud.ClearNotices();
+
+            // 出走前の危険度（H-03）。Lost の可能性があるレースは確認してから始める
+            _risk = RiskAssessment.Evaluate(course, RaceConditions.Default, entrants[0], _balance);
+            _waitingRiskConfirm = _risk.LostPossible;
+            _riskBannerRemaining = _waitingRiskConfirm ? 0f : _riskBannerSeconds;
+            string reasons = _risk.Reasons.Count > 0 ? string.Join(" / ", _risk.Reasons) : "特に問題なし";
+            _hud.ShowRisk(_risk.Label, reasons, RiskColor(_risk.Level), _waitingRiskConfirm);
             _cameraController.Mode = RaceCameraMode.PlayerFollow;
             _hud.HideResult();
 
@@ -243,6 +292,19 @@ namespace NagaRace.Presentation.Race
         {
             if (_simulator == null) return;
 
+            if (_waitingRiskConfirm)
+            {
+                UpdateHud();
+                UpdateCamera();
+                return;
+            }
+
+            if (_riskBannerRemaining > 0f)
+            {
+                _riskBannerRemaining -= Time.deltaTime;
+                if (_riskBannerRemaining <= 0f) _hud.HideRisk();
+            }
+
             _accumulator += Time.deltaTime * _playbackSpeed;
             while (_accumulator >= _simulator.DeltaTime && !_simulator.IsFinished)
             {
@@ -265,7 +327,17 @@ namespace NagaRace.Presentation.Race
                 _postFinishSeconds += Time.deltaTime * _playbackSpeed;
                 Capture(_currentPositions, _currentForwards, _postFinishSeconds);
                 ApplyPoses(1f);
-                if (!_resultShown) ShowResult();
+                var me = _simulator.Racers[_playerIndex];
+                if (me.IsLost && !_lostShown)
+                {
+                    _lostShown = true;
+                    _resultShown = true;
+                    ShowLost(me);
+                }
+                else if (!_resultShown)
+                {
+                    ShowResult();
+                }
             }
         }
 
@@ -322,6 +394,7 @@ namespace NagaRace.Presentation.Race
             for (int i = 0; i < _views.Count; i++)
             {
                 _views[i].SetFurnacePhase(_simulator.Racers[i].FurnacePhase);
+                _views[i].SetOut(_simulator.Racers[i].IsRetired);
             }
 
             double distance = _simulator.Course.Distance;
@@ -335,7 +408,9 @@ namespace NagaRace.Presentation.Race
             {
                 var r = _simulator.RacerAtRank(rank);
                 string status;
-                if (r.IsFinished) status = FormatTime(r.FinishTimeSeconds);
+                if (r.IsLost) status = "LOST";
+                else if (r.IsRetired) status = "リタイア";
+                else if (r.IsFinished) status = FormatTime(r.FinishTimeSeconds);
                 else if (rank == 1) status = SectionLabel(r.Segment);
                 else status = $"+{(leader.Progress - r.Progress) * distance:0}m";
                 _rows.Add(new RankingRow { Name = r.Entrant.Name, Status = status, Color = RacerColors[r.Index % RacerColors.Length], IsPlayer = r.Entrant.IsPlayer });
@@ -398,6 +473,13 @@ namespace NagaRace.Presentation.Race
                     case RaceEventType.LeafChanceMiss:
                         if (isPlayer) _hud.ShowNotice("チャンスを逃した", new Color(0.8f, 0.8f, 0.8f));
                         break;
+                    case RaceEventType.CourseAccident:
+                        _vfx.Splash(position, 40);
+                        if (isPlayer) _hud.ShowNotice("事故！", new Color(1f, 0.3f, 0.25f));
+                        break;
+                    case RaceEventType.Retire:
+                        if (isPlayer && !_simulator.Racers[_playerIndex].IsLost) _hud.ShowNotice("リタイア…", new Color(0.8f, 0.8f, 0.85f));
+                        break;
                     case RaceEventType.Finish:
                         if (isPlayer) _hud.ShowNotice($"ゴール！ {_simulator.Racers[_playerIndex].Rank}着", new Color(1f, 0.9f, 0.3f));
                         break;
@@ -459,6 +541,14 @@ namespace NagaRace.Presentation.Race
             {
                 _playerAiStyle = (AiStyle)(((int)_playerAiStyle + 1) % 3);
             }
+
+            y += h + 4f;
+            if (GUI.Button(new Rect(x, y, w / 2 - 2, h), $"耐久:{_playerDurability}"))
+            {
+                _playerDurability = _playerDurability > 45 ? 45 : (_playerDurability > 15 ? 15 : 100);
+            }
+
+            if (GUI.Button(new Rect(x + w / 2, y, w / 2, h), $"疲労:{_playerFatigue}")) _playerFatigue = _playerFatigue > 0 ? 0 : 80;
         }
 
         private string CameraLabel()
@@ -468,6 +558,32 @@ namespace NagaRace.Presentation.Race
                 case RaceCameraMode.WidePack: return "全体";
                 case RaceCameraMode.Finish: return "ゴール";
                 default: return "追従";
+            }
+        }
+
+        private void ShowLost(RacerState me)
+        {
+            var lines = new List<string>
+            {
+                $"<size=56>{me.Entrant.Name}は、</size>",
+                "<size=56>流れの向こうへ旅立った。</size>",
+                "",
+                $"{_simulator.Course.Name}　{me.Progress:P0} 地点",
+                $"最後の葉脈炉　{me.MaxFurnaceSeconds:0.0} 秒",
+                "",
+                "<size=26>思い出アルバムへ（クリック / Space）</size>",
+            };
+            _hud.ShowLost(string.Join("\n", lines));
+        }
+
+        private static Color RiskColor(RiskLevel level)
+        {
+            switch (level)
+            {
+                case RiskLevel.Safe: return new Color(0.45f, 0.95f, 0.55f);
+                case RiskLevel.Caution: return new Color(1f, 0.85f, 0.3f);
+                case RiskLevel.Danger: return new Color(1f, 0.45f, 0.25f);
+                default: return new Color(1f, 0.15f, 0.2f);
             }
         }
 
