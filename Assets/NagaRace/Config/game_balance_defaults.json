@@ -463,5 +463,33 @@
       "Acceleration",
       "Stability"
     ]
+  },
+  "grafting": {
+    "candidateCount": 3,
+    "parentWeightRange": [
+      0.3,
+      0.7
+    ],
+    "speciesPull": 0.2,
+    "varianceSd": 5.0,
+    "childStartRatio": 0.8,
+    "factorInheritChancePerLevel": 0.3,
+    "maxFactors": 4,
+    "factorBonusPerLevel": 3,
+    "mutationChance": 0.04,
+    "growthTypeRandomChance": 0.1,
+    "personalityRandomChance": 0.15,
+    "compatibility": {
+      "base": 50,
+      "differentLineage": 20,
+      "sameSpecies": 10,
+      "factorOverlapPenalty": 5,
+      "varianceReductionAtMax": 0.4
+    },
+    "acquiredFactorThresholds": [
+      75,
+      85,
+      95
+    ]
   }
 }

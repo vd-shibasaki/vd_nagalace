@@ -1,0 +1,107 @@
+{
+  "_comment": "因子と突然変異（05 §8〜9）。因子は親木から確率で継承され、子の能力に level × factorBonusPerLevel を加える。acquiredFrom は現役中の能力から後天的に因子を得る条件（引退時のみ登録。ロストでは失われる）。",
+  "factors": [
+    {
+      "id": "high_output_vein",
+      "name": "高速葉脈",
+      "parameter": "furnace.output",
+      "acquiredFrom": "furnace.output"
+    },
+    {
+      "id": "long_critical",
+      "name": "長時間臨界",
+      "parameter": "furnace.criticalDuration",
+      "acquiredFrom": "furnace.criticalDuration"
+    },
+    {
+      "id": "strong_cooling",
+      "name": "強冷却",
+      "parameter": "furnace.cooling",
+      "acquiredFrom": "furnace.cooling"
+    },
+    {
+      "id": "rapid_master",
+      "name": "急流巧者",
+      "parameter": "affinity.rapid",
+      "acquiredFrom": "affinity.rapid"
+    },
+    {
+      "id": "deep_master",
+      "name": "雨巧者",
+      "parameter": "affinity.deep",
+      "acquiredFrom": "affinity.deep"
+    },
+    {
+      "id": "high_buoyancy",
+      "name": "高浮力",
+      "parameter": "stats.buoyancy",
+      "acquiredFrom": "stats.buoyancy"
+    },
+    {
+      "id": "sturdy",
+      "name": "強靭",
+      "parameter": "stats.toughness",
+      "acquiredFrom": "stats.toughness"
+    },
+    {
+      "id": "contact_master",
+      "name": "接触巧者",
+      "parameter": "stats.stability",
+      "acquiredFrom": "stats.stability"
+    },
+    {
+      "id": "swift",
+      "name": "俊流",
+      "parameter": "stats.flowSpeed",
+      "acquiredFrom": "stats.flowSpeed"
+    },
+    {
+      "id": "keen",
+      "name": "見切り",
+      "parameter": "stats.judgement",
+      "acquiredFrom": "stats.judgement"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "double_vein",
+      "name": "二重葉脈",
+      "modifiers": {
+        "furnace.output": 15,
+        "furnace.durability": -15
+      }
+    },
+    {
+      "id": "golden",
+      "name": "黄金",
+      "modifiers": {
+        "stats.judgement": 6,
+        "stats.toughness": -4
+      }
+    },
+    {
+      "id": "black_leaf",
+      "name": "黒葉",
+      "modifiers": {
+        "stats.stability": 8,
+        "stats.buoyancy": -6
+      }
+    },
+    {
+      "id": "variegated",
+      "name": "斑入り",
+      "modifiers": {
+        "stats.acceleration": 6,
+        "stats.flowSpeed": -3
+      }
+    },
+    {
+      "id": "odd_silhouette",
+      "name": "特殊シルエット",
+      "modifiers": {
+        "affinity.narrow": 12,
+        "stats.buoyancy": -4
+      }
+    }
+  ]
+}

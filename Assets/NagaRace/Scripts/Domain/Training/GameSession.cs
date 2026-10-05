@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NagaRace.Domain.Balance;
 using NagaRace.Domain.Characters;
 using NagaRace.Domain.Common;
+using NagaRace.Domain.Lineage;
 using NagaRace.Domain.Race;
 
 namespace NagaRace.Domain.Training
@@ -36,6 +37,27 @@ namespace NagaRace.Domain.Training
         /// <summary>通算日（1始まり）。1アクション = 1日。</summary>
         public int Day { get; private set; }
         public Roster Roster { get; }
+
+        private readonly List<ParentTree> _parentTrees = new List<ParentTree>();
+
+        /// <summary>親木園（05 §6）。</summary>
+        public IReadOnlyList<ParentTree> ParentTrees => _parentTrees;
+
+        public ParentTree FindParentTree(string id)
+        {
+            foreach (var t in _parentTrees)
+            {
+                if (t.Id == id) return t;
+            }
+
+            return null;
+        }
+
+        public void AddParentTree(ParentTree tree)
+        {
+            if (FindParentTree(tree.Id) != null) throw new InvalidOperationException($"親木 {tree.Id} は登録済みです。");
+            _parentTrees.Add(tree);
+        }
 
         public GameDate Date(BalanceConfig balance) => new GameDate(Day, balance.Calendar);
 

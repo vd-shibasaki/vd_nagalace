@@ -25,6 +25,11 @@ namespace NagaRace.Tests.EditMode
         public static NagaRace.Domain.Training.TrainingCatalog Trainings =>
             _trainings ?? (_trainings = JsonTrainingParser.Parse(File.ReadAllText(Path.Combine(Root, "Data/Trainings/trainings.json"))));
 
+        private static NagaRace.Domain.Lineage.LineageCatalog _lineage;
+
+        public static NagaRace.Domain.Lineage.LineageCatalog Lineage =>
+            _lineage ?? (_lineage = JsonLineageParser.Parse(File.ReadAllText(Path.Combine(Root, "Data/Factors/factors.json"))));
+
         public static BalanceConfig Balance =>
             _balance ?? (_balance = JsonBalanceParser.Parse(File.ReadAllText(Path.Combine(Root, "Config/game_balance_defaults.json"))));
 

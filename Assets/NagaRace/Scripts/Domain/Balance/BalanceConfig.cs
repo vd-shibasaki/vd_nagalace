@@ -30,6 +30,7 @@ namespace NagaRace.Domain.Balance
         public CalendarBalance Calendar { get; set; } = new CalendarBalance();
         public WeatherBalance Weather { get; set; } = new WeatherBalance();
         public GrowthBalance Growth { get; set; } = new GrowthBalance();
+        public GraftingBalance Grafting { get; set; } = new GraftingBalance();
     }
 
     public sealed class RaceBalance
@@ -271,6 +272,37 @@ namespace NagaRace.Domain.Balance
         public Dictionary<string, double> RaceSpeedMultiplier { get; set; } = new Dictionary<string, double>();
         public Dictionary<string, double> DailyDeclineChance { get; set; } = new Dictionary<string, double>();
         public string[] DeclineStats { get; set; }
+    }
+
+    /// <summary>接ぎ木（05 §7〜9）。</summary>
+    public sealed class GraftingBalance
+    {
+        public int CandidateCount { get; set; }
+        public double[] ParentWeightRange { get; set; }
+        /// <summary>系統の基準値へ寄せる割合。</summary>
+        public double SpeciesPull { get; set; }
+        public double VarianceSd { get; set; }
+        /// <summary>若葉として生まれるときの能力の割合（育成で伸ばす前提）。</summary>
+        public double ChildStartRatio { get; set; }
+        public double FactorInheritChancePerLevel { get; set; }
+        public int MaxFactors { get; set; }
+        public int FactorBonusPerLevel { get; set; }
+        public double MutationChance { get; set; }
+        public double GrowthTypeRandomChance { get; set; }
+        public double PersonalityRandomChance { get; set; }
+        public CompatibilityBalance Compatibility { get; set; } = new CompatibilityBalance();
+        /// <summary>後天因子のレベル1〜3の閾値。</summary>
+        public int[] AcquiredFactorThresholds { get; set; }
+    }
+
+    public sealed class CompatibilityBalance
+    {
+        public double Base { get; set; }
+        public double DifferentLineage { get; set; }
+        public double SameSpecies { get; set; }
+        public double FactorOverlapPenalty { get; set; }
+        /// <summary>相性100のときのばらつきの縮小率。</summary>
+        public double VarianceReductionAtMax { get; set; }
     }
 
     public sealed class GrowthTypeBalance

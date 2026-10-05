@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NagaRace.Domain.Common;
+using NagaRace.Domain.Lineage;
 
 namespace NagaRace.Domain.Characters
 {
@@ -193,6 +194,22 @@ namespace NagaRace.Domain.Characters
         public IReadOnlyList<string> BodyTraits => _bodyTraits;
         /// <summary>特性 id（02 §5）。継承・突然変異で付く。</summary>
         public IReadOnlyList<string> Traits => _traits;
+
+        // ---- 継承（M7） ----
+
+        private readonly List<GeneFactor> _factors = new List<GeneFactor>();
+
+        /// <summary>親木から受け継いだ因子（05 §8）。</summary>
+        public IReadOnlyList<GeneFactor> Factors => _factors;
+
+        /// <summary>突然変異（05 §9）。なければ null。</summary>
+        public string MutationId { get; set; }
+
+        public void SetFactors(IEnumerable<GeneFactor> factors)
+        {
+            _factors.Clear();
+            if (factors != null) _factors.AddRange(factors);
+        }
 
         /// <summary>直前に行ったならし（同じならしの連続回数の判定に使う）。</summary>
         public string LastTrainingId { get; private set; }
