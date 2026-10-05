@@ -11,6 +11,9 @@ namespace NagaRace.Presentation.Race
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         private Transform _body;
+        private Renderer _bodyRenderer;
+        private MaterialPropertyBlock _block;
+        private NagaRace.Domain.Race.FurnacePhase _furnacePhase;
         private Transform _marker;
         private Transform _ring;
         private float _bobPhase;
@@ -31,6 +34,8 @@ namespace NagaRace.Presentation.Race
             view._body = CreatePart(PrimitiveType.Sphere, "Body", root.transform, bodyMaterial, color);
             view._body.localScale = new Vector3(1.2f, 0.35f, 1.6f) * scale;
             view._body.localPosition = new Vector3(0f, 0.2f, 0f);
+            view._bodyRenderer = view._body.GetComponent<Renderer>();
+            view._block = new MaterialPropertyBlock();
 
             // 葉先（進行方向が分かるように）
             var tip = CreatePart(PrimitiveType.Cube, "Tip", view._body, bodyMaterial, color * 0.85f);
@@ -58,6 +63,35 @@ namespace NagaRace.Presentation.Race
             {
                 transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
             }
+        }
+
+        /// <summary>葉脈炉の状態を見た目に反映する（葉脈の発光の代わりに体色を光らせる）。</summary>
+        public void SetFurnacePhase(NagaRace.Domain.Race.FurnacePhase phase)
+        {
+            _furnacePhase = phase;
+        }
+
+        private void LateUpdate()
+        {
+            if (_bodyRenderer == null) return;
+            var color = Color;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 18f);
+            switch (_furnacePhase)
+            {
+                case NagaRace.Domain.Race.FurnacePhase.Ignition:
+                case NagaRace.Domain.Race.FurnacePhase.ActiveSafe:
+                    color = Color.Lerp(Color, new Color(1f, 0.95f, 0.55f), 0.45f + 0.25f * pulse);
+                    break;
+                case NagaRace.Domain.Race.FurnacePhase.ActiveRisk:
+                    color = Color.Lerp(Color, new Color(1f, 0.1f, 0.05f), 0.4f + 0.5f * pulse);
+                    break;
+                case NagaRace.Domain.Race.FurnacePhase.Broken:
+                    color = Color * 0.45f;
+                    break;
+            }
+
+            _block.SetColor(BaseColorId, color);
+            _bodyRenderer.SetPropertyBlock(_block);
         }
 
         private void Update()

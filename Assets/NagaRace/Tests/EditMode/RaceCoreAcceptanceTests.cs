@@ -106,7 +106,7 @@ namespace NagaRace.Tests.EditMode
         // 頑丈（Toughness）はダメージ軽減の能力で、ダメージは M4 で実装するため、M1 では着順に影響しない。
         // TODO(M4): 頑丈は「受けるダメージ量が減る」ことをテストする（10 A-05 の注記）。
         [TestCase(StatType.FlowSpeed, "test_straight")]
-        [TestCase(StatType.Acceleration, "test_rapid")]
+        [TestCase(StatType.Acceleration, "test_straight")]
         [TestCase(StatType.Buoyancy, "test_rapid")]
         [TestCase(StatType.Stability, "test_rapid")]
         [TestCase(StatType.Judgement, "test_branch")]

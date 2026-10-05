@@ -44,6 +44,9 @@ namespace NagaRace.Presentation.Race
 
         public Canvas Canvas => _canvas;
 
+        /// <summary>セーフエリア内のルート（他の HUD 部品の親）。</summary>
+        public RectTransform SafeRoot => _safeRoot;
+
         /// <summary>現在の順位表示（テスト・デバッグ用）。</summary>
         public string RankLabel => _rankText != null ? _rankText.text : string.Empty;
 
@@ -205,7 +208,7 @@ namespace NagaRace.Presentation.Race
         {
             var anchor = new Vector2(1f, 0f);
             _speedText = UiFactory.Label("Speed", _safeRoot, _font, 34, TextAnchor.LowerRight, anchor, anchor, new Vector2(-32f, 28f), new Vector2(300f, 50f), Color.white);
-            // TODO(M3): 下部中央に葉力ゲージ・葉脈炉ボタン・臨界カウントを置く。M4 で耐久を追加。
+            // 葉力ゲージ・葉脈炉ボタンは FurnaceHud が下部中央に置く。TODO(M4): 耐久表示を追加
         }
 
         private void BuildPlayerLabel(string playerName)

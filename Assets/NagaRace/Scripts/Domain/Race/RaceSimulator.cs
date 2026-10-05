@@ -9,13 +9,14 @@ namespace NagaRace.Domain.Race
     /// 8体オートレースの固定Tickシミュレーション（04）。
     ///
     /// 1 Tick の処理順:
-    ///   A. 判断（Tick開始時点の位置・速度だけを見て、目標速度・接触・横移動先を決める）
+    ///   0. 入力反映（プレイヤー入力を Tick 番号付きで記録）
+    ///   A. 判断（葉力・葉脈炉の更新、Tick開始時点の位置・速度だけを見て目標速度・接触・横移動先を決める）
     ///   B. 移動（全員を同時に動かす。Segment の乗り換え・ゴール判定）
     ///   C. 進路計画（新しく分岐Segmentに入った出走者のルートを決める）
     ///   D. 順位更新
     /// A と C は他の出走者の「この Tick で更新された値」を見ないため、出走者の処理順で結果が変わらない。
     /// </summary>
-    public sealed class RaceSimulator
+    public sealed partial class RaceSimulator
     {
         private readonly BalanceConfig _balance;
         private readonly SpeedCalculator _speed;
@@ -42,6 +43,8 @@ namespace NagaRace.Domain.Race
             _timeoutSeconds = balance.Race.TimeoutSeconds;
             _speed = new SpeedCalculator(balance, Conditions, course);
             _routes = new RouteSelector(balance, course, _speed);
+            _furnace = new FurnaceRules(balance);
+            _chancePoints = CreateChancePoints(seed);
 
             int count = entrants.Count;
             _racers = new List<RacerState>(count);
@@ -61,6 +64,7 @@ namespace NagaRace.Domain.Race
                 racer.TargetLateral = racer.Lateral;
                 racer.HomeLateral = racer.Lateral;
                 racer.StaticSpeedFactor = _speed.StaticFactor(racer.Entrant);
+                racer.SafeDurationSeconds = _furnace.SafeDuration(racer.Entrant);
                 EnterSegment(racer, course.StartSegment, 0);
                 racer.CurrentSpeed = _speed.TargetSpeed(racer) * balance.Race.StartSpeedRatio;
                 racer.Progress = 0;
@@ -105,6 +109,9 @@ namespace NagaRace.Domain.Race
 
             int tick = Tick + 1;
             double dt = DeltaTime;
+
+            // 0. 入力反映
+            ApplyPendingInputs(tick);
 
             // A. 判断
             for (int i = 0; i < _racers.Count; i++)
@@ -151,20 +158,21 @@ namespace NagaRace.Domain.Race
                 placings.Add(new RacePlacing(racer.Index, racer.Entrant.Id, rank, racer.IsFinished, racer.FinishTimeSeconds));
             }
 
-            return new RaceResult(Seed, Tick, TickRate, TimedOut, placings, _events.ToArray());
+            return new RaceResult(Seed, Tick, TickRate, TimedOut, placings, _events.ToArray(), _inputLog.ToArray());
         }
 
         private void Decide(RacerState racer, int tick, double dt)
         {
             var stats = _balance.Stats;
             var lane = _balance.Lane;
-            racer.TargetSpeed = _speed.TargetSpeed(racer);
+            UpdateLeafPowerAndFurnace(racer, tick, dt);
+            racer.TargetSpeed = _speed.TargetSpeed(racer) * FurnaceSpeedMultiplier(racer);
 
             // 姿勢崩れ。乱数は毎Tick必ず1回引く（状況で消費数を変えず再現性を保つ）
             double stumbleRoll = racer.MovementRandom.NextDouble();
             if (racer.StunRemaining <= 0 && stumbleRoll < _speed.StumbleHazardPerSecond(racer.Entrant, racer.Segment) * dt)
             {
-                _pendingSpeed[racer.Index] = racer.CurrentSpeed * (1.0 - stats.StumbleSlowdown);
+                _pendingSpeed[racer.Index] = Math.Min(_pendingSpeed[racer.Index], racer.CurrentSpeed * (1.0 - stats.StumbleSlowdown));
                 racer.StunRemaining = MathUtil.LerpByStat(stats.StunSecondsByStability, racer.Entrant.Stats.Stability);
                 _events.Add(new RaceEvent(tick, RaceEventType.Stumble, racer.Index, racer.Segment.Id, -1, racer.CurrentSpeed));
             }
@@ -193,6 +201,7 @@ namespace NagaRace.Domain.Race
             {
                 // 接触: 安定が高いほど減速・スタンが小さい（04 §6）
                 double slowdown = MathUtil.LerpByStat(stats.ContactSlowdownByStability, racer.Entrant.Stats.Stability);
+                if (racer.IsFurnaceActive) slowdown *= _furnace.ContactSlowdownMultiplier;
                 double variance = 0.75 + 0.5 * racer.ContactRandom.NextDouble();
                 _pendingSpeed[racer.Index] = Math.Min(_pendingSpeed[racer.Index], racer.CurrentSpeed * (1.0 - slowdown * variance));
                 racer.StunRemaining = MathUtil.LerpByStat(stats.StunSecondsByStability, racer.Entrant.Stats.Stability);
@@ -215,6 +224,7 @@ namespace NagaRace.Domain.Race
             var entrant = racer.Entrant;
 
             double rate = racer.TargetSpeed > startSpeed ? _speed.AccelRate(entrant) : stats.DecelRate;
+            if (racer.IsFurnaceActive && racer.TargetSpeed > startSpeed) rate *= _furnace.AccelMultiplier;
             racer.CurrentSpeed = MathUtil.MoveTowards(startSpeed, racer.TargetSpeed, rate * dt);
 
             double agility = (entrant.Stats.Acceleration + entrant.Stats.Stability) / 2.0;

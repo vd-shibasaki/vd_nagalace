@@ -16,6 +16,24 @@ namespace NagaRace.Domain.Race
         GoodFlow,
         /// <summary>詰まりを避けて横位置を変えた。Value = 新しい目標横位置。</summary>
         LaneChange,
+        /// <summary>葉脈炉の始動入力を受け付けた（起動ラグ開始）。</summary>
+        FurnaceIgnite,
+        /// <summary>葉力不足・冷却中・故障中で始動できなかった。</summary>
+        FurnaceRejected,
+        /// <summary>葉脈炉が稼働した。</summary>
+        FurnaceStart,
+        /// <summary>SafeDuration を超えて RiskZone に入った（OVER FLOW）。</summary>
+        FurnaceOverflow,
+        /// <summary>解除した（葉力切れを含む）。Value = 稼働秒数。</summary>
+        FurnaceRelease,
+        /// <summary>故障した。Value = (int)FurnaceFailure。</summary>
+        FurnaceFailureOccurred,
+        /// <summary>葉力チャンスの受付開始。</summary>
+        LeafChanceOpen,
+        /// <summary>葉力チャンスで獲得した。Value = 獲得量。</summary>
+        LeafChanceHit,
+        /// <summary>葉力チャンスを逃した。</summary>
+        LeafChanceMiss,
         /// <summary>ゴールした。Value = ゴールタイム（秒）。</summary>
         Finish,
         /// <summary>制限時間でレースを打ち切った。</summary>

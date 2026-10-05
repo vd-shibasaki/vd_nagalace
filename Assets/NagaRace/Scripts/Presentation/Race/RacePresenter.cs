@@ -47,6 +47,8 @@ namespace NagaRace.Presentation.Race
         [SerializeField] private Material _splashMaterial;
         [SerializeField] private RaceCourseGeometry.Settings _geometrySettings = new RaceCourseGeometry.Settings();
         [SerializeField] private bool _showDebugPanel = true;
+        [SerializeField] private bool _autoFurnace;
+        [SerializeField] private AiStyle _playerAiStyle = AiStyle.Standard;
 
         private RunRaceUseCase _useCase;
         private BalanceConfig _balance;
@@ -68,6 +70,8 @@ namespace NagaRace.Presentation.Race
         private RaceHud _hud;
         private RaceVfxController _vfx;
         private RaceCameraController _cameraController;
+        private FurnaceHud _furnaceHud;
+        private RaceInputController _input;
         private double _accumulator;
         private int _processedEvents;
         private int _playerIndex;
@@ -79,6 +83,13 @@ namespace NagaRace.Presentation.Race
         public Camera RaceCamera => _camera;
         public int PlayerIndex => _playerIndex;
         public RaceCameraController CameraController => _cameraController;
+        public FurnaceHud FurnaceHud => _furnaceHud;
+
+        public bool AutoFurnace
+        {
+            get => _autoFurnace;
+            set => _autoFurnace = value;
+        }
 
         public float PlaybackSpeed
         {
@@ -112,6 +123,31 @@ namespace NagaRace.Presentation.Race
             _vfx.Build(_splashMaterial);
             _cameraController = gameObject.AddComponent<RaceCameraController>();
             _cameraController.SetCamera(_camera);
+
+            _furnaceHud = _hud.gameObject.AddComponent<FurnaceHud>();
+            _furnaceHud.Build(_hud.SafeRoot, _font);
+            _furnaceHud.FurnacePressed += PressFurnace;
+            _furnaceHud.ChargePressed += PressCharge;
+            _input = gameObject.AddComponent<RaceInputController>();
+            _input.FurnacePressed += PressFurnace;
+            _input.ChargePressed += PressCharge;
+        }
+
+        /// <summary>葉脈炉ボタン。待機中なら始動、稼働中なら解除（「いつ始動し、いつ止めるか」だけを操作する）。</summary>
+        public void PressFurnace()
+        {
+            if (_simulator == null || _simulator.IsFinished) return;
+            var me = _simulator.Racers[_playerIndex];
+            if (me.IsFinished) return;
+            bool running = me.IsFurnaceActive || me.FurnacePhase == FurnacePhase.Ignition;
+            _simulator.SubmitInput(_playerIndex, running ? RaceInputType.FurnaceRelease : RaceInputType.FurnaceActivate);
+        }
+
+        /// <summary>葉力チャンスのタップ。</summary>
+        public void PressCharge()
+        {
+            if (_simulator == null || _simulator.IsFinished) return;
+            _simulator.SubmitInput(_playerIndex, RaceInputType.Charge);
         }
 
         private void Start()
@@ -136,7 +172,8 @@ namespace NagaRace.Presentation.Race
             {
                 // TODO(M8): 出走登録画面（SC-08）から渡す。現在は固定の自キャラ
                 new RaceEntrant("player", "アカネ", "maple", new CharacterStats(65, 70, 50, 50, 50, 60),
-                    personality: Personality.Gambler, isPlayer: true),
+                    personality: Personality.Gambler, aiStyle: _playerAiStyle, furnace: new FurnaceStats(70, 60, 50, 50, 45),
+                    isPlayer: true, autoFurnace: _autoFurnace),
             };
             entrants.AddRange(NpcFactory.Generate(new NpcSpec(_species), 2026UL, _balance.Race.EntrantCount - 1));
 
@@ -281,6 +318,12 @@ namespace NagaRace.Presentation.Race
         private void UpdateHud()
         {
             var player = _simulator.Racers[_playerIndex];
+            _furnaceHud.Refresh(player, _simulator.CanActivateFurnace(_playerIndex), _balance.LeafPower.FurnaceMinimum, _balance.LeafPower.ChanceWindowSeconds);
+            for (int i = 0; i < _views.Count; i++)
+            {
+                _views[i].SetFurnacePhase(_simulator.Racers[i].FurnacePhase);
+            }
+
             double distance = _simulator.Course.Distance;
             float remaining = (float)((1.0 - player.Progress) * distance);
             _hud.UpdateStatus(player.Rank, _simulator.Racers.Count, SectionLabel(player.Segment), remaining,
@@ -331,6 +374,30 @@ namespace NagaRace.Presentation.Race
                     case RaceEventType.BranchChoice:
                         if (isPlayer) _hud.ShowNotice($"→ {SectionLabel(_simulator.Course.GetSegment(e.SegmentId))}へ", new Color(0.8f, 0.9f, 1f));
                         break;
+                    case RaceEventType.FurnaceStart:
+                        if (isPlayer)
+                        {
+                            _hud.ShowNotice("葉脈炉 始動！", new Color(1f, 0.9f, 0.4f));
+                            _cameraController.Punch(0.6f);
+                        }
+
+                        break;
+                    case RaceEventType.FurnaceOverflow:
+                        if (isPlayer) _hud.ShowNotice("OVER FLOW!!", new Color(1f, 0.25f, 0.2f));
+                        break;
+                    case RaceEventType.FurnaceRelease:
+                        if (isPlayer) _hud.ShowNotice($"解除（{e.Value:0.0}秒）", new Color(0.9f, 0.95f, 1f));
+                        break;
+                    case RaceEventType.FurnaceFailureOccurred:
+                        _vfx.Splash(position, 30);
+                        if (isPlayer) _hud.ShowNotice(FailureLabel((FurnaceFailure)(int)e.Value), new Color(1f, 0.35f, 0.3f));
+                        break;
+                    case RaceEventType.LeafChanceHit:
+                        if (isPlayer) _hud.ShowNotice($"葉力 +{e.Value:0}", new Color(0.6f, 1f, 0.6f));
+                        break;
+                    case RaceEventType.LeafChanceMiss:
+                        if (isPlayer) _hud.ShowNotice("チャンスを逃した", new Color(0.8f, 0.8f, 0.8f));
+                        break;
                     case RaceEventType.Finish:
                         if (isPlayer) _hud.ShowNotice($"ゴール！ {_simulator.Racers[_playerIndex].Rank}着", new Color(1f, 0.9f, 0.3f));
                         break;
@@ -357,29 +424,41 @@ namespace NagaRace.Presentation.Race
         {
             if (!_showDebugPanel || _simulator == null) return;
 
-            // 開発用の操作パネル（正式な操作 UI は M8）
-            float x = 8f;
-            float y = Screen.height - 46f;
-            if (GUI.Button(new Rect(x, y, 120, 36), "同Seed再実行")) StartRace();
-            if (GUI.Button(new Rect(x += 126, y, 100, 36), "次のSeed")) { _seed++; StartRace(); }
-            if (GUI.Button(new Rect(x += 106, y, 110, 36), "コース切替"))
+            // 開発用の操作パネル（正式な操作 UI は M8）。左側のランキングの下に縦に並べる
+            const float x = 8f;
+            const float w = 200f;
+            const float h = 30f;
+            float y = Screen.height * 0.52f;
+            GUI.Label(new Rect(x, y, 600f, 22f), $"Seed {_seed} / {_simulator.Course.Id} / x{_playbackSpeed}  [Space]炉 [F]チャンス");
+            y += 24f;
+            if (GUI.Button(new Rect(x, y, w / 2 - 2, h), "同Seed再実行")) StartRace();
+            if (GUI.Button(new Rect(x + w / 2, y, w / 2, h), "次のSeed")) { _seed++; StartRace(); }
+            y += h + 4f;
+            if (GUI.Button(new Rect(x, y, w / 2 - 2, h), "コース切替"))
             {
                 _courseIndex = (_courseIndex + 1) % _courseIds.Count;
                 StartRace();
             }
 
-            if (GUI.Button(new Rect(x += 116, y, 110, 36), $"カメラ:{CameraLabel()}"))
+            if (GUI.Button(new Rect(x + w / 2, y, w / 2, h), $"カメラ:{CameraLabel()}"))
             {
                 _cameraController.Mode = _cameraController.Mode == RaceCameraMode.PlayerFollow ? RaceCameraMode.WidePack : RaceCameraMode.PlayerFollow;
             }
 
+            y += h + 4f;
             float[] speeds = { 1f, 2f, 4f, 8f };
-            foreach (float speed in speeds)
+            for (int i = 0; i < speeds.Length; i++)
             {
-                if (GUI.Button(new Rect(x += (speed == 1f ? 116 : 56), y, 50, 36), $"x{speed}")) _playbackSpeed = speed;
+                if (GUI.Button(new Rect(x + i * (w / 4), y, w / 4 - 2, h), $"x{speeds[i]}")) _playbackSpeed = speeds[i];
             }
 
-            GUI.Label(new Rect(8f, y - 24f, 600f, 22f), $"Seed {_seed} / {_simulator.Course.Id} / x{_playbackSpeed}");
+            y += h + 4f;
+            // おまかせ炉・AI作戦は次のレースから反映（レース中の切替はしない）
+            if (GUI.Button(new Rect(x, y, w / 2 - 2, h), $"おまかせ:{(_autoFurnace ? "ON" : "OFF")}")) _autoFurnace = !_autoFurnace;
+            if (GUI.Button(new Rect(x + w / 2, y, w / 2, h), $"作戦:{AiStyleLabel(_playerAiStyle)}"))
+            {
+                _playerAiStyle = (AiStyle)(((int)_playerAiStyle + 1) % 3);
+            }
         }
 
         private string CameraLabel()
@@ -389,6 +468,27 @@ namespace NagaRace.Presentation.Race
                 case RaceCameraMode.WidePack: return "全体";
                 case RaceCameraMode.Finish: return "ゴール";
                 default: return "追従";
+            }
+        }
+
+        private static string AiStyleLabel(AiStyle style)
+        {
+            switch (style)
+            {
+                case AiStyle.Safe: return "安全";
+                case AiStyle.Aggressive: return "攻める";
+                default: return "標準";
+            }
+        }
+
+        private static string FailureLabel(FurnaceFailure failure)
+        {
+            switch (failure)
+            {
+                case FurnaceFailure.MinorDamage: return "炉が止まった…";
+                case FurnaceFailure.FurnaceDamage: return "炉が壊れた！";
+                case FurnaceFailure.Blow: return "ブロー！！";
+                default: return "重大故障！！";
             }
         }
 

@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
+using NagaRace.Domain.Race;
 using NagaRace.Presentation.Race;
 using NUnit.Framework;
 using UnityEngine;
@@ -86,11 +88,69 @@ namespace NagaRace.Tests.PlayMode
             Assert.AreEqual(0, outOfView, $"全体カメラで自キャラが画面外（{outOfView}/{frames}）");
         }
 
+        [UnityTest]
+        public IEnumerator H02_葉脈炉の状態がボタンの文字と色で切り替わる()
+        {
+            var presenter = Object.FindFirstObjectByType<RacePresenter>();
+            presenter.StartRace(0, 7);
+            presenter.PlaybackSpeed = 4f;
+            var sim = presenter.Simulator;
+            var me = sim.Racers[presenter.PlayerIndex];
+
+            // 始動できるまで待つ（葉力チャンスも取る）
+            int frames = 0;
+            while (!sim.CanActivateFurnace(presenter.PlayerIndex) && frames++ < MaxFrames)
+            {
+                if (me.IsChanceOpen) presenter.PressCharge();
+                yield return null;
+            }
+
+            Assert.IsTrue(sim.CanActivateFurnace(presenter.PlayerIndex), "葉力が溜まらない");
+            yield return null;
+            StringAssert.Contains("始動", presenter.FurnaceHud.ButtonLabel);
+            var readyColor = presenter.FurnaceHud.ButtonColor;
+
+            presenter.PlaybackSpeed = 1f;
+            presenter.PressFurnace();
+            // 0.5 秒（ゲーム内時間）以内に表示が切り替わる
+            for (int i = 0; i < 15; i++) yield return null;
+            Assert.AreNotEqual(FurnacePhase.Ready, me.FurnacePhase);
+            Assert.AreNotEqual(readyColor, presenter.FurnaceHud.ButtonColor);
+
+            // RiskZone では「解除！」表示
+            frames = 0;
+            while (me.FurnacePhase != FurnacePhase.ActiveRisk && (me.IsFurnaceActive || me.FurnacePhase == FurnacePhase.Ignition) && frames++ < MaxFrames) yield return null;
+            if (me.FurnacePhase == FurnacePhase.ActiveRisk)
+            {
+                yield return null;
+                StringAssert.Contains("解除！", presenter.FurnaceHud.ButtonLabel);
+            }
+
+            presenter.PressFurnace();
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(me.IsFurnaceActive, "解除できない");
+        }
+
+        [UnityTest]
+        public IEnumerator おまかせ炉ならプレイヤーも炉を使う()
+        {
+            var presenter = Object.FindFirstObjectByType<RacePresenter>();
+            presenter.AutoFurnace = true;
+            presenter.StartRace(0, 9);
+            presenter.PlaybackSpeed = 8f;
+            int frames = 0;
+            while (!presenter.Simulator.IsFinished && frames++ < MaxFrames) yield return null;
+            presenter.AutoFurnace = false;
+
+            Assert.IsTrue(presenter.Simulator.Events.Any(e => e.EntrantIndex == presenter.PlayerIndex && e.Type == RaceEventType.FurnaceStart));
+        }
+
         /// <summary>
         /// 目視確認用のスクリーンショット。環境変数 NAGARACE_SCREENSHOT_DIR が設定されている場合だけ保存する。
         /// （-nographics では描画されないため、通常のテスト実行ではスキップ）
         /// </summary>
         [UnityTest]
+        [Timeout(900000)]
         public IEnumerator スクリーンショットを保存する()
         {
             string dir = Environment.GetEnvironmentVariable("NAGARACE_SCREENSHOT_DIR");
@@ -113,6 +173,26 @@ namespace NagaRace.Tests.PlayMode
                 presenter.PlaybackSpeed = 1f;
                 for (int i = 0; i < 20; i++) yield return null;
                 Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_2_mid.png"));
+
+                // 葉脈炉（始動できるまで進めて、RiskZone まで引っ張った瞬間を撮る）
+                var me = presenter.Simulator.Racers[presenter.PlayerIndex];
+                while (!presenter.Simulator.CanActivateFurnace(presenter.PlayerIndex) && !me.IsFinished)
+                {
+                    if (me.IsChanceOpen) presenter.PressCharge();
+                    yield return null;
+                }
+
+                if (!me.IsFinished)
+                {
+                    presenter.PlaybackSpeed = 1f;
+                    presenter.PressFurnace();
+                    for (int i = 0; i < 40; i++) yield return null;
+                    Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_2b_furnace.png"));
+                    while (me.FurnacePhase != FurnacePhase.ActiveRisk && (me.IsFurnaceActive || me.FurnacePhase == FurnacePhase.Ignition)) yield return null;
+                    for (int i = 0; i < 10; i++) yield return null;
+                    Capture(presenter, Path.Combine(dir, $"{presenter.CourseIds[course]}_2c_overflow.png"));
+                    presenter.PressFurnace();
+                }
 
                 presenter.CameraController.Mode = RaceCameraMode.WidePack;
                 for (int i = 0; i < 60; i++) yield return null;

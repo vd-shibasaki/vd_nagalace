@@ -34,7 +34,7 @@
       1.06
     ],
     "accelRateRange": [
-      3.0,
+      1.5,
       9.0
     ],
     "roughnessPenaltyByBuoyancy": [
@@ -152,13 +152,28 @@
   "leafPower": {
     "max": 100,
     "furnaceMinimum": 50,
-    "passiveGainPerSecond": 2.5,
+    "passiveGainPerSecond": 0.7,
     "behindBonusPerSecond": {
       "5": 0.5,
       "6": 0.8,
       "7": 1.1,
       "8": 1.5
-    }
+    },
+    "chanceCountRange": [
+      3,
+      5
+    ],
+    "chanceProgressRange": [
+      0.12,
+      0.85
+    ],
+    "chanceWindowSeconds": 1.2,
+    "chanceGain": 15,
+    "chanceMinQuality": 0.5,
+    "npcChanceSuccessByJudgement": [
+      0.5,
+      0.9
+    ]
   },
   "furnace": {
     "outputBoostRange": [
@@ -188,8 +203,8 @@
     ],
     "rampStart": 0.7,
     "rampAtSafeEnd": 1.2,
-    "rampMax": 1.35,
-    "riskRampPerSecond": 0.12,
+    "rampMax": 1.3,
+    "riskRampPerSecond": 0.2,
     "damageModifierAtZeroDurability": 2.0,
     "fatigueModifierAtMax": 1.8,
     "failureSeverityWeights": {
@@ -206,7 +221,16 @@
         "Critical": 10
       },
       "longOverrunSeconds": 3.0
-    }
+    },
+    "accelMultiplier": 1.5,
+    "contactSlowdownMultiplier": 0.5,
+    "minorSlowdown": 0.2,
+    "minorStunSeconds": 0.6,
+    "blowSlowdown": 0.5,
+    "blowStunSeconds": 2.0,
+    "riskRampTimeConstantSeconds": 1.0,
+    "npcFinalStretchProgress": 0.5,
+    "npcFullGaugeLeafPower": 95
   },
   "durability": {
     "goodMin": 70,

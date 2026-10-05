@@ -37,8 +37,9 @@ namespace NagaRace.Domain.Race
     /// <summary>レース結果。</summary>
     public sealed class RaceResult
     {
-        public RaceResult(ulong seed, int totalTicks, int tickRate, bool timedOut, IReadOnlyList<RacePlacing> placings, IReadOnlyList<RaceEvent> events)
+        public RaceResult(ulong seed, int totalTicks, int tickRate, bool timedOut, IReadOnlyList<RacePlacing> placings, IReadOnlyList<RaceEvent> events, IReadOnlyList<RaceInput> inputs = null)
         {
+            Inputs = inputs ?? Array.Empty<RaceInput>();
             Seed = seed;
             TotalTicks = totalTicks;
             TickRate = tickRate;
@@ -54,6 +55,8 @@ namespace NagaRace.Domain.Race
         /// <summary>着順（1着から）。</summary>
         public IReadOnlyList<RacePlacing> Placings { get; }
         public IReadOnlyList<RaceEvent> Events { get; }
+        /// <summary>反映されたプレイヤー入力（Tick 付き）。リプレイに使う。</summary>
+        public IReadOnlyList<RaceInput> Inputs { get; }
 
         public RacePlacing Winner => Placings[0];
 

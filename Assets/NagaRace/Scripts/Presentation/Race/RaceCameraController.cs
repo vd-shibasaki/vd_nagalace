@@ -26,9 +26,18 @@ namespace NagaRace.Presentation.Race
         [SerializeField] private float _smoothing = 4f;
 
         private Vector3 _velocity;
+        private float _punchRemaining;
+        private float _punchDuration;
 
         public RaceCameraMode Mode { get; set; } = RaceCameraMode.PlayerFollow;
         public Camera Camera => _camera;
+
+        /// <summary>葉脈炉始動時の短いカメラ寄り（03 §7）。</summary>
+        public void Punch(float duration)
+        {
+            _punchDuration = duration;
+            _punchRemaining = duration;
+        }
 
         public void SetCamera(Camera camera)
         {
@@ -48,6 +57,7 @@ namespace NagaRace.Presentation.Race
         public void UpdateCamera(Vector3 playerPosition, Vector3 playerForward, IReadOnlyList<Vector3> packPositions, Vector3 goalPosition, float deltaTime)
         {
             if (_camera == null) return;
+            _punchRemaining = Mathf.Max(0f, _punchRemaining - deltaTime);
 
             Vector3 position;
             Vector3 lookAt;
@@ -74,7 +84,9 @@ namespace NagaRace.Presentation.Race
         private void ComputeFollow(Vector3 player, Vector3 forward, out Vector3 position, out Vector3 lookAt)
         {
             var flatForward = new Vector3(forward.x, 0f, forward.z).normalized;
-            position = player - flatForward * _followDistance + Vector3.up * _followHeight;
+            // 寄りは最大 30%。キャラを見失わないよう距離を詰めるだけにする
+            float punch = _punchDuration > 0 ? Mathf.Sin(Mathf.Clamp01(_punchRemaining / _punchDuration) * Mathf.PI) * 0.3f : 0f;
+            position = player - flatForward * _followDistance * (1f - punch) + Vector3.up * _followHeight * (1f - punch * 0.5f);
             lookAt = player + flatForward * _lookAhead;
         }
 

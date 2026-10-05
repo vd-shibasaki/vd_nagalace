@@ -135,9 +135,15 @@ namespace NagaRace.Domain.Balance
         public double FurnaceMinimum { get; set; }
         public double PassiveGainPerSecond { get; set; }
         public Dictionary<string, double> BehindBonusPerSecond { get; set; } = new Dictionary<string, double>();
+        public int[] ChanceCountRange { get; set; }
+        public double[] ChanceProgressRange { get; set; }
+        public double ChanceWindowSeconds { get; set; }
+        public double ChanceGain { get; set; }
+        /// <summary>受付時間の端で入力したときの獲得倍率（中央で 1.0）。</summary>
+        public double ChanceMinQuality { get; set; }
+        public double[] NpcChanceSuccessByJudgement { get; set; }
     }
 
-    // TODO(M3): 葉脈炉の実装時に参照する。M1 では読込のみ。
     public sealed class FurnaceBalance
     {
         public double[] OutputBoostRange { get; set; }
@@ -154,6 +160,18 @@ namespace NagaRace.Domain.Balance
         public double DamageModifierAtZeroDurability { get; set; }
         public double FatigueModifierAtMax { get; set; }
         public FailureSeverityWeights FailureSeverityWeights { get; set; } = new FailureSeverityWeights();
+        public double AccelMultiplier { get; set; }
+        public double ContactSlowdownMultiplier { get; set; }
+        public double MinorSlowdown { get; set; }
+        public double MinorStunSeconds { get; set; }
+        public double BlowSlowdown { get; set; }
+        public double BlowStunSeconds { get; set; }
+        /// <summary>RiskZone 中にブーストが上限へ近づく速さ（秒）。</summary>
+        public double RiskRampTimeConstantSeconds { get; set; }
+        /// <summary>NPC はこの進捗以降を勝負所として炉を使う。</summary>
+        public double NpcFinalStretchProgress { get; set; }
+        /// <summary>NPC は葉力がここまで溜まったら勝負所の前でも使う（溢れさせないため）。</summary>
+        public double NpcFullGaugeLeafPower { get; set; }
     }
 
     public sealed class FailureSeverityWeights

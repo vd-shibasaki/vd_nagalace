@@ -14,6 +14,9 @@ namespace NagaRace.Domain.Race
             RouteRandom = RandomStreams.Create(raceSeed, index, RandomStreamId.Route);
             MovementRandom = RandomStreams.Create(raceSeed, index, RandomStreamId.Movement);
             ContactRandom = RandomStreams.Create(raceSeed, index, RandomStreamId.Contact);
+            FurnaceRandom = RandomStreams.Create(raceSeed, index, RandomStreamId.Furnace);
+            EventRandom = RandomStreams.Create(raceSeed, index, RandomStreamId.Event);
+            AutoControl = !entrant.IsPlayer || entrant.AutoFurnace;
         }
 
         /// <summary>出走リスト上の番号。枠番を兼ねる。</summary>
@@ -53,6 +56,38 @@ namespace NagaRace.Domain.Race
         internal double StaticSpeedFactor { get; set; } = 1.0;
         internal bool NeedsRoutePlan { get; set; }
 
+        // ---- 葉力・葉脈炉（04 §7〜8） ----
+
+        /// <summary>葉力 0〜100。</summary>
+        public double LeafPower { get; internal set; }
+        public FurnacePhase FurnacePhase { get; internal set; } = FurnacePhase.Ready;
+        /// <summary>稼働時間（Ignition 後から）。</summary>
+        public double FurnaceActiveSeconds { get; internal set; }
+        /// <summary>この個体の SafeDuration（秒）。</summary>
+        public double SafeDurationSeconds { get; internal set; }
+        public double FurnaceCooldownRemaining { get; internal set; }
+        /// <summary>最後に起きた故障。</summary>
+        public FurnaceFailure LastFailure { get; internal set; }
+        /// <summary>AI が炉・葉力チャンスを操作するか（NPC と「おまかせ炉」）。プレイヤーが炉を操作すると false になる。</summary>
+        public bool AutoControl { get; internal set; }
+
+        /// <summary>葉力チャンスの受付中か。</summary>
+        public bool IsChanceOpen { get; internal set; }
+        /// <summary>受付の残り秒数（UI 用）。</summary>
+        public double ChanceRemainingSeconds { get; internal set; }
+
+        public bool IsFurnaceActive => FurnacePhase == FurnacePhase.ActiveSafe || FurnacePhase == FurnacePhase.ActiveRisk;
+
+        /// <summary>臨界（SafeDuration）までの残り秒数。RiskZone 中は負。</summary>
+        public double SecondsToCritical => SafeDurationSeconds - FurnaceActiveSeconds;
+
+        internal double FurnacePhaseSeconds { get; set; }
+        internal int NextChanceIndex { get; set; }
+        internal double ChanceOpenedAt { get; set; }
+        internal bool ChanceUsed { get; set; }
+
+        internal IRandomProvider FurnaceRandom { get; }
+        internal IRandomProvider EventRandom { get; }
         internal IRandomProvider RouteRandom { get; }
         internal IRandomProvider MovementRandom { get; }
         internal IRandomProvider ContactRandom { get; }

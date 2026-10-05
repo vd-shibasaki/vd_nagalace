@@ -1,7 +1,7 @@
 {
     "name": "NagaRace.Presentation",
     "rootNamespace": "NagaRace.Presentation",
-    "references": ["NagaRace.Domain", "NagaRace.Application", "NagaRace.Infrastructure", "UnityEngine.UI"],
+    "references": ["NagaRace.Domain", "NagaRace.Application", "NagaRace.Infrastructure", "UnityEngine.UI", "Unity.InputSystem"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
