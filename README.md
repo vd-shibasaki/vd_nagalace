@@ -78,9 +78,17 @@ Assets/NagaRace/
 2. 画面左上の「同Seedで再実行 / 次のSeed / コース切替 / x1〜x8」で操作
 3. シーンが壊れたらメニュー `NagaRace > Setup > Create Race Debug Scene` で作り直せる
 
+### レース画面を見る（M2）
+
+1. `Assets/NagaRace/Scenes/Race.unity` を開いて Play
+2. 画面左下の開発用ボタンで「同Seed再実行 / 次のSeed / コース切替 / カメラ切替（追従・全体）/ x1〜x8」
+3. シーンや仮マテリアルが壊れたらメニュー `NagaRace > Setup > Create All (Materials + Scenes)`
+
 ### テスト
 
 - Editor: `Window > General > Test Runner` → EditMode → Run All
+- PlayMode（レース画面の自動確認）: Test Runner の PlayMode → Run All
+  - 環境変数 `NAGARACE_SCREENSHOT_DIR` を設定し、`-nographics` なしで実行するとスクリーンショットを保存
 - コマンドライン:
   ```
   "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe" -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults TestResults-EditMode.xml

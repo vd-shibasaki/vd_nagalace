@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/NagaRace/Scenes/Race.unity
+    guid: aedf6e8911591404cb689e2a02ea59fa
+  - enabled: 1
     path: Assets/NagaRace/Scenes/Debug/RaceDebug.unity
     guid: 9452419e8368f4d4bb1826df4a593370
   m_configObjects:
