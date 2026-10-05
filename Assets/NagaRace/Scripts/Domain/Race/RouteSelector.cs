@@ -57,6 +57,7 @@ namespace NagaRace.Domain.Race
             }
 
             double noiseScale = MathUtil.LerpByStat(_balance.Stats.RouteNoiseByJudgement, entrant.Stats.Judgement);
+            if (racer.MudRemaining > 0) noiseScale *= _balance.Obstruction.Mud.RouteNoiseMultiplier;
 
             FlowSegment best = null;
             double bestScore = double.NegativeInfinity;

@@ -491,5 +491,47 @@
       85,
       95
     ]
+  },
+  "obstruction": {
+    "_comment": "悪葉っぱの妨害スキル（04 §10, 02 §13）。speciesIds の系統だけが AI で使う。妨害単独では Lost しない（C-03）。",
+    "speciesIds": [
+      "bad_leaf"
+    ],
+    "globalCooldownSeconds": 14,
+    "minProgress": 0.08,
+    "ram": {
+      "leafCost": 10,
+      "cooldownSeconds": 20,
+      "rangeMeters": 2.5,
+      "targetSlowdown": 0.15,
+      "targetStunSeconds": 0.5,
+      "selfSlowdown": 0.06,
+      "selfStunSeconds": 0.3,
+      "damage": 1
+    },
+    "mud": {
+      "leafCost": 8,
+      "cooldownSeconds": 24,
+      "rangeMeters": 8,
+      "durationSeconds": 3.0,
+      "speedPenalty": 0.02,
+      "routeNoiseMultiplier": 3.0,
+      "reactionAddSeconds": 0.5
+    },
+    "whirl": {
+      "leafCost": 15,
+      "cooldownSeconds": 30,
+      "durationSeconds": 4.0,
+      "zoneBehindFrom": 5,
+      "zoneBehindTo": 20,
+      "roughnessAdd": 0.5
+    },
+    "leafDrain": {
+      "leafCost": 8,
+      "cooldownSeconds": 26,
+      "rangeMeters": 10,
+      "durationSeconds": 5.0,
+      "gainMultiplier": 0.4
+    }
   }
 }

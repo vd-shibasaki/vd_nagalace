@@ -97,6 +97,7 @@ namespace NagaRace.Domain.Race
                 gain += bonus;
             }
 
+            if (racer.LeafDrainRemaining > 0) gain *= _balance.Obstruction.LeafDrain.GainMultiplier;
             racer.LeafPower = Math.Min(leaf.Max, racer.LeafPower + gain * dt);
             UpdateChance(racer, tick, now);
 

@@ -42,6 +42,8 @@ namespace NagaRace.Domain.Race
         Retire,
         /// <summary>ロスト（02 §11）。OtherIndex = (int)DamageCause。</summary>
         Lost,
+        /// <summary>妨害スキルを使った。OtherIndex = 対象（渦は -1）、Value = (int)ObstructionSkill。</summary>
+        SkillUsed,
         /// <summary>ゴールした。Value = ゴールタイム（秒）。</summary>
         Finish,
         /// <summary>制限時間でレースを打ち切った。</summary>

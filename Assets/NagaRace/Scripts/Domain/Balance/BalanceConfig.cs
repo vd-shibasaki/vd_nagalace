@@ -31,6 +31,7 @@ namespace NagaRace.Domain.Balance
         public WeatherBalance Weather { get; set; } = new WeatherBalance();
         public GrowthBalance Growth { get; set; } = new GrowthBalance();
         public GraftingBalance Grafting { get; set; } = new GraftingBalance();
+        public ObstructionBalance Obstruction { get; set; } = new ObstructionBalance();
     }
 
     public sealed class RaceBalance
@@ -272,6 +273,58 @@ namespace NagaRace.Domain.Balance
         public Dictionary<string, double> RaceSpeedMultiplier { get; set; } = new Dictionary<string, double>();
         public Dictionary<string, double> DailyDeclineChance { get; set; } = new Dictionary<string, double>();
         public string[] DeclineStats { get; set; }
+    }
+
+    /// <summary>悪葉っぱの妨害スキル（04 §10, 02 §13）。</summary>
+    public sealed class ObstructionBalance
+    {
+        public string[] SpeciesIds { get; set; }
+        public double GlobalCooldownSeconds { get; set; }
+        public double MinProgress { get; set; }
+        public RamBalance Ram { get; set; } = new RamBalance();
+        public MudBalance Mud { get; set; } = new MudBalance();
+        public WhirlBalance Whirl { get; set; } = new WhirlBalance();
+        public LeafDrainBalance LeafDrain { get; set; } = new LeafDrainBalance();
+    }
+
+    public class SkillBalance
+    {
+        public double LeafCost { get; set; }
+        public double CooldownSeconds { get; set; }
+    }
+
+    public sealed class RamBalance : SkillBalance
+    {
+        public double RangeMeters { get; set; }
+        public double TargetSlowdown { get; set; }
+        public double TargetStunSeconds { get; set; }
+        public double SelfSlowdown { get; set; }
+        public double SelfStunSeconds { get; set; }
+        public double Damage { get; set; }
+    }
+
+    public sealed class MudBalance : SkillBalance
+    {
+        public double RangeMeters { get; set; }
+        public double DurationSeconds { get; set; }
+        public double SpeedPenalty { get; set; }
+        public double RouteNoiseMultiplier { get; set; }
+        public double ReactionAddSeconds { get; set; }
+    }
+
+    public sealed class WhirlBalance : SkillBalance
+    {
+        public double DurationSeconds { get; set; }
+        public double ZoneBehindFrom { get; set; }
+        public double ZoneBehindTo { get; set; }
+        public double RoughnessAdd { get; set; }
+    }
+
+    public sealed class LeafDrainBalance : SkillBalance
+    {
+        public double RangeMeters { get; set; }
+        public double DurationSeconds { get; set; }
+        public double GainMultiplier { get; set; }
     }
 
     /// <summary>接ぎ木（05 §7〜9）。</summary>

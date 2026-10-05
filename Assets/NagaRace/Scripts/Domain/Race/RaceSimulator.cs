@@ -66,6 +66,7 @@ namespace NagaRace.Domain.Race
                 racer.HomeLateral = racer.Lateral;
                 racer.StaticSpeedFactor = _speed.StaticFactor(racer.Entrant);
                 racer.SafeDurationSeconds = _furnace.SafeDuration(racer.Entrant);
+                racer.IsObstructor = IsObstructorSpecies(racer.Entrant);
                 EnterSegment(racer, course.StartSegment, 0);
                 racer.CurrentSpeed = _speed.TargetSpeed(racer) * balance.Race.StartSpeedRatio;
                 racer.Progress = 0;
@@ -113,6 +114,7 @@ namespace NagaRace.Domain.Race
 
             // 0. 入力反映
             ApplyPendingInputs(tick);
+            ExpireWhirlZones(tick);
 
             // A. 判断
             for (int i = 0; i < _racers.Count; i++)
@@ -179,17 +181,24 @@ namespace NagaRace.Domain.Race
             var lane = _balance.Lane;
             UpdateLeafPowerAndFurnace(racer, tick, dt);
             if (racer.IsOut) return;
+            UpdateObstructionTimers(racer, tick, dt);
+            RunObstructionAi(racer, tick);
+            if (racer.IsOut) return;
             racer.TargetSpeed = _speed.TargetSpeed(racer) * FurnaceSpeedMultiplier(racer);
+            if (racer.MudRemaining > 0) racer.TargetSpeed *= 1.0 - _balance.Obstruction.Mud.SpeedPenalty;
 
             // 姿勢崩れ。乱数は毎Tick必ず1回引く（状況で消費数を変えず再現性を保つ）
             double stumbleRoll = racer.MovementRandom.NextDouble();
-            if (racer.StunRemaining <= 0 && stumbleRoll < _speed.StumbleHazardPerSecond(racer.Entrant, racer.Segment) * dt)
+            var whirl = WhirlAt(racer);
+            double extraRoughness = whirl != null ? _balance.Obstruction.Whirl.RoughnessAdd : 0;
+            if (racer.StunRemaining <= 0 && stumbleRoll < _speed.StumbleHazardPerSecond(racer.Entrant, racer.Segment, extraRoughness) * dt)
             {
                 _pendingSpeed[racer.Index] = Math.Min(_pendingSpeed[racer.Index], racer.CurrentSpeed * (1.0 - stats.StumbleSlowdown));
                 racer.StunRemaining = MathUtil.LerpByStat(stats.StunSecondsByStability, racer.Entrant.Stats.Stability);
                 _events.Add(new RaceEvent(tick, RaceEventType.Stumble, racer.Index, racer.Segment.Id, -1, racer.CurrentSpeed));
-                ApplyDamage(racer, _balance.Durability.StumbleDamage, DamageCause.Stumble, tick, majorIncident: false);
-                CheckAccident(racer, tick);
+                // 渦（妨害）の中で崩した姿勢は妨害扱い: 重大事故・Lost にはつながらない（10 C-03）
+                ApplyDamage(racer, _balance.Durability.StumbleDamage, whirl != null ? DamageCause.Obstruction : DamageCause.Stumble, tick, majorIncident: false);
+                if (whirl == null) CheckAccident(racer, tick);
                 if (racer.IsOut) return;
             }
 
@@ -229,6 +238,7 @@ namespace NagaRace.Domain.Race
             racer.TargetSpeed = Math.Min(racer.TargetSpeed, blocker.CurrentSpeed);
 
             double reaction = MathUtil.LerpByStat(stats.BlockReactionSecondsByJudgement, racer.Entrant.Stats.Judgement);
+            if (racer.MudRemaining > 0) reaction += _balance.Obstruction.Mud.ReactionAddSeconds;
             if (racer.BlockedSeconds >= reaction && Math.Abs(racer.Lateral - racer.TargetLateral) < 0.05)
             {
                 TryDodge(racer, tick);

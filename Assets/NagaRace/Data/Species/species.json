@@ -33,7 +33,7 @@
     },
     {
       "id": "bad_leaf", "displayName": "悪葉っぱ",
-      "stats": { "flowSpeed": [55, 70], "acceleration": [55, 75], "buoyancy": [40, 55], "stability": [50, 70], "toughness": [45, 60], "judgement": [40, 60] },
+      "stats": { "flowSpeed": [58, 73], "acceleration": [58, 78], "buoyancy": [40, 55], "stability": [52, 72], "toughness": [45, 60], "judgement": [40, 60] },
       "affinities": { "narrow": [50, 70] },
       "personalityWeights": { "Normal": 1, "Cautious": 0, "Gambler": 3 }
     }

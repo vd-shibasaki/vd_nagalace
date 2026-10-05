@@ -69,9 +69,9 @@ namespace NagaRace.Domain.Race
         }
 
         /// <summary>荒れた水面で姿勢を崩す確率（1秒あたり）。安定が高いほど低い。</summary>
-        public double StumbleHazardPerSecond(RaceEntrant entrant, FlowSegment segment)
+        public double StumbleHazardPerSecond(RaceEntrant entrant, FlowSegment segment, double extraRoughness = 0)
         {
-            double roughness = MathUtil.Clamp01(segment.Roughness + _roughnessAdd);
+            double roughness = MathUtil.Clamp01(segment.Roughness + _roughnessAdd + extraRoughness);
             return roughness * _balance.Stats.StumbleRatePerSecond
                 * MathUtil.LerpByStat(_balance.Stats.StumbleHazardByStability, entrant.Stats.Stability);
         }

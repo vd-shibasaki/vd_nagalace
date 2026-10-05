@@ -85,6 +85,8 @@ namespace NagaRace.Presentation.Race
         /// <summary>出走登録（Main シーン）から来たレース。null なら開発用のデバッグレース。</summary>
         private PreparedRace _gameRace;
         private bool _gameCompleted;
+        private readonly Dictionary<WhirlZone, GameObject> _whirlViews = new Dictionary<WhirlZone, GameObject>();
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private double _accumulator;
         private int _processedEvents;
         private int _playerIndex;
@@ -280,6 +282,8 @@ namespace NagaRace.Presentation.Race
 
         private void BuildCourse(RaceCourse course)
         {
+            foreach (var view in _whirlViews.Values) Destroy(view);
+            _whirlViews.Clear();
             if (_riverRoot != null) Destroy(_riverRoot.gameObject);
             _geometry = new RaceCourseGeometry(course, _geometrySettings);
             _riverRoot = RiverBuilder.Build(_geometry, _waterMaterial, _bankMaterial, _lineMaterial);
@@ -355,6 +359,7 @@ namespace NagaRace.Presentation.Race
 
             float alpha = _simulator.IsFinished ? 1f : (float)(_accumulator / _simulator.DeltaTime);
             ApplyPoses(alpha);
+            SyncWhirlViews();
             UpdateHud();
             UpdateCamera();
 
@@ -510,6 +515,12 @@ namespace NagaRace.Presentation.Race
                     case RaceEventType.LeafChanceMiss:
                         if (isPlayer) _hud.ShowNotice("チャンスを逃した", new Color(0.8f, 0.8f, 0.8f));
                         break;
+                    case RaceEventType.SkillUsed:
+                        var skill = (ObstructionSkill)(int)e.Value;
+                        if (e.OtherIndex >= 0) _vfx.Splash(_currentPositions[e.OtherIndex], skill == ObstructionSkill.Ram ? 20 : 10);
+                        if (e.OtherIndex == _playerIndex) _hud.ShowNotice($"{_simulator.Racers[e.EntrantIndex].Entrant.Name}の{SkillLabel(skill)}！", new Color(0.85f, 0.6f, 1f));
+                        else if (isPlayer) _hud.ShowNotice($"{SkillLabel(skill)}！", new Color(0.85f, 0.6f, 1f));
+                        break;
                     case RaceEventType.CourseAccident:
                         _vfx.Splash(position, 40);
                         if (isPlayer) _hud.ShowNotice("事故！", new Color(1f, 0.3f, 0.25f));
@@ -645,6 +656,59 @@ namespace NagaRace.Presentation.Race
                 case RiskLevel.Caution: return new Color(1f, 0.85f, 0.3f);
                 case RiskLevel.Danger: return new Color(1f, 0.45f, 0.25f);
                 default: return new Color(1f, 0.15f, 0.2f);
+            }
+        }
+
+        /// <summary>渦（妨害）の区間を水面の紫の円で見せる。</summary>
+        private void SyncWhirlViews()
+        {
+            var zones = _simulator.WhirlZones;
+            var expired = new List<WhirlZone>();
+            foreach (var pair in _whirlViews)
+            {
+                bool alive = false;
+                foreach (var z in zones)
+                {
+                    if (z == pair.Key) alive = true;
+                }
+
+                if (!alive) expired.Add(pair.Key);
+            }
+
+            foreach (var zone in expired)
+            {
+                Destroy(_whirlViews[zone]);
+                _whirlViews.Remove(zone);
+            }
+
+            foreach (var zone in zones)
+            {
+                if (_whirlViews.ContainsKey(zone)) continue;
+                var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                Destroy(disc.GetComponent<Collider>());
+                disc.name = "Whirl";
+                double middle = (zone.From + zone.To) / 2.0;
+                disc.transform.position = _geometry.Point(zone.Segment, middle, 0f) + Vector3.up * 0.06f;
+                float width = _geometry.WidthAt(zone.Segment, middle);
+                disc.transform.localScale = new Vector3(width * 0.9f, 0.02f, (float)(zone.To - zone.From));
+                disc.transform.rotation = Quaternion.LookRotation(_geometry.Tangent(zone.Segment.ProgressAt(middle)));
+                var renderer = disc.GetComponent<Renderer>();
+                renderer.sharedMaterial = _markerMaterial;
+                var block = new MaterialPropertyBlock();
+                block.SetColor(BaseColorId, new Color(0.55f, 0.35f, 0.85f));
+                renderer.SetPropertyBlock(block);
+                _whirlViews[zone] = disc;
+            }
+        }
+
+        private static string SkillLabel(ObstructionSkill skill)
+        {
+            switch (skill)
+            {
+                case ObstructionSkill.Ram: return "体当たり";
+                case ObstructionSkill.Mud: return "泥はね";
+                case ObstructionSkill.Whirl: return "渦おこし";
+                default: return "葉力妨害";
             }
         }
 

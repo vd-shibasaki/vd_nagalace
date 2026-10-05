@@ -112,6 +112,17 @@ namespace NagaRace.Domain.Race
         internal double ChanceOpenedAt { get; set; }
         internal bool ChanceUsed { get; set; }
 
+        // ---- 妨害（04 §10） ----
+
+        /// <summary>妨害スキルを使う系統か（悪葉っぱ）。</summary>
+        public bool IsObstructor { get; internal set; }
+        /// <summary>泥はねを受けている残り秒数（判断が鈍る）。</summary>
+        public double MudRemaining { get; internal set; }
+        /// <summary>葉力妨害を受けている残り秒数（葉力が溜まりにくい）。</summary>
+        public double LeafDrainRemaining { get; internal set; }
+        internal double[] SkillCooldowns { get; } = new double[4];
+        internal double GlobalSkillCooldown { get; set; }
+
         internal IRandomProvider FurnaceRandom { get; }
         internal IRandomProvider EventRandom { get; }
         internal IRandomProvider RouteRandom { get; }
