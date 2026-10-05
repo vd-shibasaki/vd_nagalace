@@ -1,0 +1,20 @@
+{
+  "_comment": "大会（02 §2）。grade 1〜5。前のグレードで1勝すると次のグレードに出られる。MOST HIGHER RIVER は最初から表示するがロック（03 §11）。schedule は毎週 raceDayOfWeek 日目に開かれる大会の組み合わせ（週ごとに順番に回る）。",
+  "tournaments": [
+    { "id": "seseragi_cup", "name": "せせらぎ杯", "grade": 1, "courseId": "test_straight", "npcStatOffset": -14 },
+    { "id": "wakaremichi_stakes", "name": "分かれ道ステークス", "grade": 1, "courseId": "test_branch", "npcStatOffset": -12 },
+    { "id": "village_cup", "name": "Village Mountain City Cup", "grade": 2, "courseId": "test_branch", "npcStatOffset": -5 },
+    { "id": "mountain_shape", "name": "Mountain Shape Championship", "grade": 3, "courseId": "test_rapid", "npcStatOffset": 3 },
+    { "id": "moon_masters", "name": "Moon Mountain Masters", "grade": 4, "courseId": "test_rapid", "npcStatOffset": 10 },
+    { "id": "most_higher_river", "name": "MOST HIGHER RIVER", "grade": 5, "courseId": "test_rapid", "npcStatOffset": 18 }
+  ],
+  "schedule": {
+    "raceDayOfWeek": 4,
+    "weekly": [
+      ["seseragi_cup", "wakaremichi_stakes", "village_cup"],
+      ["wakaremichi_stakes", "village_cup", "mountain_shape"],
+      ["seseragi_cup", "mountain_shape", "moon_masters"],
+      ["village_cup", "moon_masters", "most_higher_river"]
+    ]
+  }
+}

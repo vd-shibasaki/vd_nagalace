@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NagaRace.Presentation.Debug;
+using NagaRace.Presentation.Main;
 using NagaRace.Presentation.Race;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -18,6 +19,10 @@ namespace NagaRace.EditorTools
     {
         private const string DebugScenePath = "Assets/NagaRace/Scenes/Debug/RaceDebug.unity";
         private const string RaceScenePath = "Assets/NagaRace/Scenes/Race.unity";
+        private const string MainScenePath = "Assets/NagaRace/Scenes/Main.unity";
+        private const string TrainingsPath = "Assets/NagaRace/Data/Trainings/trainings.json";
+        private const string FactorsPath = "Assets/NagaRace/Data/Factors/factors.json";
+        private const string TournamentsPath = "Assets/NagaRace/Data/Tournaments/tournaments.json";
         private const string CourseFolder = "Assets/NagaRace/Data/Courses";
         private const string MaterialFolder = "Assets/NagaRace/Art/Materials";
         private const string BalancePath = "Assets/NagaRace/Config/game_balance_defaults.json";
@@ -29,7 +34,37 @@ namespace NagaRace.EditorTools
             CreateMaterials();
             CreateRaceScene();
             CreateRaceDebugScene();
+            CreateMainScene();
             UpdateBuildScenes();
+        }
+
+        [MenuItem("NagaRace/Setup/Create Main Scene")]
+        public static void CreateMainScene()
+        {
+            CreateMaterials();
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            CreateLight();
+            var camera = CreateCamera(new Color(0.62f, 0.82f, 0.95f));
+            camera.fieldOfView = 50f;
+
+            var boot = new GameObject("App").AddComponent<AppBootstrap>();
+            var so = new SerializedObject(boot);
+            so.FindProperty("_assets._balance").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(BalancePath);
+            so.FindProperty("_assets._species").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(SpeciesPath);
+            so.FindProperty("_assets._trainings").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(TrainingsPath);
+            so.FindProperty("_assets._factors").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(FactorsPath);
+            so.FindProperty("_assets._tournaments").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(TournamentsPath);
+            AssignCourses(so.FindProperty("_assets._courses"));
+            so.FindProperty("_font").objectReferenceValue = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            so.FindProperty("_groundMaterial").objectReferenceValue = LoadMaterial("Bank");
+            so.FindProperty("_waterMaterial").objectReferenceValue = LoadMaterial("Water");
+            so.FindProperty("_racerMaterial").objectReferenceValue = LoadMaterial("Racer");
+            so.FindProperty("_markerMaterial").objectReferenceValue = LoadMaterial("Marker");
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorSceneManager.SaveScene(scene, MainScenePath);
+            UpdateBuildScenes();
+            Debug.Log($"[NagaRace] Main シーンを作成しました: {MainScenePath}");
         }
 
         [MenuItem("NagaRace/Setup/Create Race Debug Scene")]
@@ -177,7 +212,8 @@ namespace NagaRace.EditorTools
         private static void UpdateBuildScenes()
         {
             var scenes = new List<EditorBuildSettingsScene>();
-            foreach (var path in new[] { RaceScenePath, DebugScenePath })
+            // 先頭がゲームの起動シーン
+            foreach (var path in new[] { MainScenePath, RaceScenePath, DebugScenePath })
             {
                 if (File.Exists(path)) scenes.Add(new EditorBuildSettingsScene(path, true));
             }

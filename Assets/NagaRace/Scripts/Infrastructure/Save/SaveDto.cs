@@ -18,6 +18,7 @@ namespace NagaRace.Infrastructure.Save
         /// <summary>ulong を安全に保存するため文字列にする。</summary>
         public string Seed { get; set; }
         public int Day { get; set; }
+        public int TopGradeWon { get; set; }
     }
 
     public sealed class SettingsDto

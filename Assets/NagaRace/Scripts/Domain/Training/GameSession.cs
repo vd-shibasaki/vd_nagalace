@@ -38,6 +38,14 @@ namespace NagaRace.Domain.Training
         public int Day { get; private set; }
         public Roster Roster { get; }
 
+        /// <summary>これまでに勝った最高グレード（0 = 未勝利）。上位大会の出走資格に使う。</summary>
+        public int TopGradeWon { get; private set; }
+
+        public void RecordWin(int grade)
+        {
+            if (grade > TopGradeWon) TopGradeWon = grade;
+        }
+
         private readonly List<ParentTree> _parentTrees = new List<ParentTree>();
 
         /// <summary>親木園（05 §6）。</summary>

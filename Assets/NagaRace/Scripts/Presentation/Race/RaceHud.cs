@@ -36,6 +36,8 @@ namespace NagaRace.Presentation.Race
         private readonly List<Text> _noticeTexts = new List<Text>();
         private readonly List<float> _noticeTimers = new List<float>();
         private GameObject _resultPanel;
+        private Button _resultButton;
+        private Text _resultButtonText;
         private GameObject _riskPanel;
         private Text _riskText;
         private Image _riskImage;
@@ -216,10 +218,23 @@ namespace NagaRace.Presentation.Race
             rect.anchoredPosition = local + new Vector2(0f, 70f);
         }
 
-        public void ShowResult(IReadOnlyList<string> lines)
+        public void ShowResult(IReadOnlyList<string> lines, string buttonLabel = null, System.Action onButton = null)
         {
             _resultPanel.SetActive(true);
             _resultText.text = string.Join("\n", lines);
+            if (buttonLabel == null) return;
+
+            if (_resultButton == null)
+            {
+                var image = UiFactory.Panel("ResultButton", _resultPanel.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(320f, 76f), new Color(0.36f, 0.72f, 0.42f));
+                image.raycastTarget = true;
+                _resultButton = image.gameObject.AddComponent<Button>();
+                _resultButtonText = UiFactory.Label("Label", image.transform, _font, 32, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(300f, 70f), Color.white);
+            }
+
+            _resultButtonText.text = buttonLabel;
+            _resultButton.onClick.RemoveAllListeners();
+            _resultButton.onClick.AddListener(() => onButton?.Invoke());
         }
 
         public void HideResult()

@@ -20,7 +20,7 @@ namespace NagaRace.Infrastructure.Save
         {
             var dto = new SaveDto
             {
-                World = new WorldDto { Seed = session.WorldSeed.ToString(CultureInfo.InvariantCulture), Day = session.Day },
+                World = new WorldDto { Seed = session.WorldSeed.ToString(CultureInfo.InvariantCulture), Day = session.Day, TopGradeWon = session.TopGradeWon },
                 Settings = new SettingsDto
                 {
                     AutoFurnace = settings.AutoFurnace,
@@ -47,6 +47,7 @@ namespace NagaRace.Infrastructure.Save
             }
 
             var session = new GameSession(seed, dto.World.Day, roster);
+            session.RecordWin(dto.World.TopGradeWon);
             foreach (var t in dto.ParentTrees ?? new List<ParentTreeDto>())
             {
                 session.AddParentTree(FromDto(t));

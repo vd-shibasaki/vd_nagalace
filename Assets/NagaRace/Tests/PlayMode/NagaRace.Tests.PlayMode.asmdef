@@ -5,6 +5,7 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "NagaRace.Domain",
+        "NagaRace.Application",
         "NagaRace.Presentation"
     ],
     "includePlatforms": [],

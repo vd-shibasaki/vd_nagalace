@@ -78,6 +78,14 @@ Assets/NagaRace/
 2. 画面左上の「同Seedで再実行 / 次のSeed / コース切替 / x1〜x8」で操作
 3. シーンが壊れたらメニュー `NagaRace > Setup > Create Race Debug Scene` で作り直せる
 
+### ゲームを遊ぶ（M8〜）
+
+1. `Assets/NagaRace/Scenes/Main.unity` を開いて Play（ビルドの起動シーン）
+2. 「はじめから」→ ホームで育成・休養を選ぶと1日進む。毎週4日目がレースの日
+3. 大会 → 出走登録 → 出走！で Race シーンへ。Space で葉脈炉、F で葉力チャンス
+4. 引退させた葉っぱは親木になり、親木園で接ぎ木できる
+5. セーブは自動（`Application.persistentDataPath/save/slot0.json`）
+
 ### レース画面を見る（M2）
 
 1. `Assets/NagaRace/Scenes/Race.unity` を開いて Play

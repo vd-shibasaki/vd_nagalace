@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using NagaRace.Application.Game;
 using NagaRace.Application.Race;
+using NagaRace.Presentation.App;
+using UnityEngine.SceneManagement;
 using NagaRace.Domain.Balance;
 using NagaRace.Domain.Characters;
 using NagaRace.Domain.Race;
@@ -79,6 +82,9 @@ namespace NagaRace.Presentation.Race
         private bool _waitingRiskConfirm;
         private float _riskBannerRemaining;
         private bool _lostShown;
+        /// <summary>出走登録（Main シーン）から来たレース。null なら開発用のデバッグレース。</summary>
+        private PreparedRace _gameRace;
+        private bool _gameCompleted;
         private double _accumulator;
         private int _processedEvents;
         private int _playerIndex;
@@ -131,9 +137,16 @@ namespace NagaRace.Presentation.Race
             _courseIds = new List<string>(_courses.Ids);
             _courseIndex = Mathf.Clamp(_courseIndex, 0, _courseIds.Count - 1);
 
+            _gameRace = GameServices.Instance?.PendingRace;
+            if (_gameRace != null)
+            {
+                _showDebugPanel = false;
+                _playbackSpeed = GameServices.Instance.Settings.PlaybackSpeed;
+            }
+
             _hud = new GameObject("RaceHud").AddComponent<RaceHud>();
             _hud.transform.SetParent(transform, false);
-            _hud.Build(_font, "アカネ", _balance.Race.EntrantCount);
+            _hud.Build(_font, _gameRace != null ? _gameRace.Request.Entrants[0].Name : "アカネ", _balance.Race.EntrantCount);
             _vfx = new GameObject("RaceVfx").AddComponent<RaceVfxController>();
             _vfx.transform.SetParent(transform, false);
             _vfx.Build(_splashMaterial);
@@ -175,6 +188,12 @@ namespace NagaRace.Presentation.Race
                 return;
             }
 
+            if (_gameRace != null && _resultShown && !_hud.IsLostPanelVisible)
+            {
+                CompleteGameRace();
+                return;
+            }
+
             if (_simulator == null || _simulator.IsFinished) return;
             var me = _simulator.Racers[_playerIndex];
             if (me.IsFinished) return;
@@ -204,19 +223,37 @@ namespace NagaRace.Presentation.Race
             StartRace();
         }
 
+        public bool IsGameRace => _gameRace != null;
+
         public void StartRace()
         {
-            var course = _courses.Get(_courseIds[_courseIndex]);
-            var entrants = new List<RaceEntrant>
+            RaceCourse course;
+            List<RaceEntrant> entrants;
+            RaceConditions conditions;
+            ulong seed;
+            if (_gameRace != null)
             {
-                // TODO(M8): 出走登録画面（SC-08）から渡す。現在は固定の自キャラ
-                new RaceEntrant("player", "アカネ", "maple", new CharacterStats(65, 70, 50, 50, 50, 60),
-                    personality: Personality.Gambler, aiStyle: _playerAiStyle, furnace: new FurnaceStats(70, 60, 50, 50, 45),
-                    isPlayer: true, durability: _playerDurability, autoFurnace: _autoFurnace, fatigue: _playerFatigue),
-            };
-            entrants.AddRange(NpcFactory.Generate(new NpcSpec(_species), 2026UL, _balance.Race.EntrantCount - 1));
+                course = _gameRace.Request.Course;
+                entrants = new List<RaceEntrant>(_gameRace.Request.Entrants);
+                conditions = _gameRace.Request.Conditions;
+                seed = _gameRace.Request.Seed;
+            }
+            else
+            {
+                // 開発用のデバッグレース（Race シーンを単独で開いたとき）
+                course = _courses.Get(_courseIds[_courseIndex]);
+                entrants = new List<RaceEntrant>
+                {
+                    new RaceEntrant("player", "アカネ", "maple", new CharacterStats(65, 70, 50, 50, 50, 60),
+                        personality: Personality.Gambler, aiStyle: _playerAiStyle, furnace: new FurnaceStats(70, 60, 50, 50, 45),
+                        isPlayer: true, durability: _playerDurability, autoFurnace: _autoFurnace, fatigue: _playerFatigue),
+                };
+                entrants.AddRange(NpcFactory.Generate(new NpcSpec(_species), 2026UL, _balance.Race.EntrantCount - 1));
+                conditions = RaceConditions.Default;
+                seed = (ulong)_seed;
+            }
 
-            _simulator = _useCase.Start(new RaceRequest(course, entrants, RaceConditions.Default, (ulong)_seed));
+            _simulator = _useCase.Start(new RaceRequest(course, entrants, conditions, seed));
             _playerIndex = 0;
             _accumulator = 0;
             _processedEvents = 0;
@@ -227,7 +264,7 @@ namespace NagaRace.Presentation.Race
             _hud.ClearNotices();
 
             // 出走前の危険度（H-03）。Lost の可能性があるレースは確認してから始める
-            _risk = RiskAssessment.Evaluate(course, RaceConditions.Default, entrants[0], _balance);
+            _risk = RiskAssessment.Evaluate(course, conditions, entrants[0], _balance);
             _waitingRiskConfirm = _risk.LostPossible;
             _riskBannerRemaining = _waitingRiskConfirm ? 0f : _riskBannerSeconds;
             string reasons = _risk.Reasons.Count > 0 ? string.Join(" / ", _risk.Reasons) : "特に問題なし";
@@ -491,7 +528,8 @@ namespace NagaRace.Presentation.Race
         {
             _resultShown = true;
             var result = _simulator.BuildResult();
-            var lines = new List<string> { "<size=40><b>RESULT</b></size>", $"{_simulator.Course.Name}  Seed {_seed}", "" };
+            string subtitle = _gameRace != null ? $"{_gameRace.Tournament.Name}　{_simulator.Course.Name}" : $"{_simulator.Course.Name}  Seed {_seed}";
+            var lines = new List<string> { "<size=40><b>RESULT</b></size>", subtitle, "" };
             foreach (var placing in result.Placings)
             {
                 var entrant = _simulator.Racers[placing.EntrantIndex].Entrant;
@@ -499,7 +537,30 @@ namespace NagaRace.Presentation.Race
                 lines.Add(entrant.IsPlayer ? $"<color=#ffd84a><b>{line}</b></color>" : line);
             }
 
-            _hud.ShowResult(lines);
+            if (_gameRace != null)
+            {
+                lines.Add("");
+                lines.Add("<size=26>Space / ボタンでホームへ</size>");
+                _hud.ShowResult(lines, "ホームへ", CompleteGameRace);
+            }
+            else
+            {
+                _hud.ShowResult(lines);
+            }
+        }
+
+        /// <summary>レース結果を個体へ反映して保存し、Main シーンへ戻る。</summary>
+        public void CompleteGameRace()
+        {
+            if (_gameRace == null || _gameCompleted || _simulator == null || !_simulator.IsFinished) return;
+            _gameCompleted = true;
+            var services = GameServices.Instance;
+            var result = _simulator.BuildResult();
+            services.LastOutcome = services.RaceDay.Complete(services.Session, _gameRace, result);
+            services.LastResult = result;
+            services.PendingRace = null;
+            services.SaveNow();
+            SceneManager.LoadScene("Main");
         }
 
         private void OnGUI()
