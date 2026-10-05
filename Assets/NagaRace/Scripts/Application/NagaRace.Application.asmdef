@@ -1,0 +1,14 @@
+{
+    "name": "NagaRace.Application",
+    "rootNamespace": "NagaRace.Application",
+    "references": ["NagaRace.Domain"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

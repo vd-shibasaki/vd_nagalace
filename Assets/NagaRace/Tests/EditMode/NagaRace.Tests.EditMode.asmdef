@@ -1,0 +1,20 @@
+{
+    "name": "NagaRace.Tests.EditMode",
+    "rootNamespace": "NagaRace.Tests.EditMode",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "NagaRace.Domain",
+        "NagaRace.Application",
+        "NagaRace.Infrastructure"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

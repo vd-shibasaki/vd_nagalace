@@ -1,0 +1,41 @@
+{
+  "_comment": "系統定義（02 §3, 12）。M1 では NPC 生成にのみ使う暫定値。stats/affinities は [最小, 最大]。",
+  "species": [
+    {
+      "id": "maple", "displayName": "モミジ",
+      "stats": { "flowSpeed": [55, 75], "acceleration": [65, 85], "buoyancy": [35, 55], "stability": [30, 55], "toughness": [30, 55], "judgement": [45, 70] },
+      "affinities": { "rapid": [55, 75], "sprint": [55, 75], "long": [30, 50] },
+      "personalityWeights": { "Normal": 2, "Cautious": 1, "Gambler": 3 }
+    },
+    {
+      "id": "ginkgo", "displayName": "イチョウ",
+      "stats": { "flowSpeed": [50, 65], "acceleration": [45, 60], "buoyancy": [45, 60], "stability": [60, 80], "toughness": [60, 80], "judgement": [50, 70] },
+      "affinities": { "long": [55, 75], "sprint": [35, 50] },
+      "personalityWeights": { "Normal": 3, "Cautious": 2, "Gambler": 1 }
+    },
+    {
+      "id": "lotus", "displayName": "ハス",
+      "stats": { "flowSpeed": [45, 60], "acceleration": [40, 55], "buoyancy": [70, 90], "stability": [55, 75], "toughness": [50, 65], "judgement": [45, 65] },
+      "affinities": { "whirlpool": [60, 80], "deep": [65, 85], "narrow": [30, 45] },
+      "personalityWeights": { "Normal": 3, "Cautious": 2, "Gambler": 1 }
+    },
+    {
+      "id": "sakura", "displayName": "サクラ",
+      "stats": { "flowSpeed": [50, 65], "acceleration": [60, 80], "buoyancy": [50, 65], "stability": [40, 60], "toughness": [30, 50], "judgement": [60, 80] },
+      "affinities": { "narrow": [60, 80], "sprint": [50, 70] },
+      "personalityWeights": { "Normal": 2, "Cautious": 2, "Gambler": 2 }
+    },
+    {
+      "id": "acorn", "displayName": "ドングリ",
+      "stats": { "flowSpeed": [45, 60], "acceleration": [35, 50], "buoyancy": [40, 55], "stability": [70, 90], "toughness": [65, 85], "judgement": [45, 60] },
+      "affinities": { "sprint": [30, 45], "long": [50, 65] },
+      "personalityWeights": { "Normal": 3, "Cautious": 1, "Gambler": 2 }
+    },
+    {
+      "id": "bad_leaf", "displayName": "悪葉っぱ",
+      "stats": { "flowSpeed": [55, 70], "acceleration": [55, 75], "buoyancy": [40, 55], "stability": [50, 70], "toughness": [45, 60], "judgement": [40, 60] },
+      "affinities": { "narrow": [50, 70] },
+      "personalityWeights": { "Normal": 1, "Cautious": 0, "Gambler": 3 }
+    }
+  ]
+}

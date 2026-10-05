@@ -1,0 +1,10 @@
+{
+  "_comment": "M1 テストコース: 直線基調。見せ場は中盤の激流。",
+  "id": "test_straight",
+  "name": "まっすぐ小川",
+  "segments": [
+    { "id": "s1", "length": 400, "baseFlowSpeed": 26, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": ["s2"] },
+    { "id": "s2", "length": 300, "baseFlowSpeed": 32, "waterDepth": 0.5, "roughness": 0.4, "danger": 2, "width": 10, "tags": ["rapid"], "next": ["s3"] },
+    { "id": "s3", "length": 600, "baseFlowSpeed": 24, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": [] }
+  ]
+}

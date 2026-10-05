@@ -1,0 +1,14 @@
+{
+  "_comment": "M1 テストコース: 激流・狭所・渦・滝。浮力・安定・適性の差が出やすい。",
+  "id": "test_rapid",
+  "name": "激流の谷",
+  "segments": [
+    { "id": "entry", "length": 400, "baseFlowSpeed": 26, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": ["torrent"] },
+    { "id": "torrent", "length": 500, "baseFlowSpeed": 34, "waterDepth": 0.7, "roughness": 0.6, "danger": 3, "width": 10, "tags": ["rapid"], "next": ["gorge"] },
+    { "id": "gorge", "length": 300, "baseFlowSpeed": 24, "waterDepth": 0.5, "roughness": 0.3, "danger": 2, "width": 6, "tags": ["narrow", "collision_heavy"], "next": ["whirl", "bypass"] },
+    { "id": "whirl", "length": 350, "baseFlowSpeed": 28, "waterDepth": 0.8, "roughness": 0.7, "danger": 3, "width": 9, "tags": ["whirlpool"], "next": ["falls"] },
+    { "id": "bypass", "length": 400, "baseFlowSpeed": 27, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 10, "tags": ["calm"], "next": ["falls"] },
+    { "id": "falls", "length": 150, "baseFlowSpeed": 38, "waterDepth": 0.6, "roughness": 0.8, "danger": 3, "width": 8, "tags": ["waterfall"], "next": ["pool"] },
+    { "id": "pool", "length": 450, "baseFlowSpeed": 25, "waterDepth": 0.5, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": [] }
+  ]
+}

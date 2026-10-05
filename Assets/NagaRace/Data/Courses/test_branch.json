@@ -1,0 +1,12 @@
+{
+  "_comment": "M1 テストコース: 分岐あり。近道は短いが狭く荒れていて危険度が高い。",
+  "id": "test_branch",
+  "name": "分かれ道の小川",
+  "segments": [
+    { "id": "start", "length": 500, "baseFlowSpeed": 26, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": ["main", "shortcut"] },
+    { "id": "main", "length": 400, "baseFlowSpeed": 25, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": ["rapid"] },
+    { "id": "shortcut", "length": 300, "baseFlowSpeed": 22, "waterDepth": 0.3, "roughness": 0.5, "danger": 3, "width": 5, "tags": ["shortcut", "narrow"], "next": ["rapid"] },
+    { "id": "rapid", "length": 400, "baseFlowSpeed": 30, "waterDepth": 0.5, "roughness": 0.3, "danger": 2, "width": 10, "tags": ["rapid"], "next": ["final"] },
+    { "id": "final", "length": 500, "baseFlowSpeed": 25, "waterDepth": 0.4, "roughness": 0.1, "danger": 1, "width": 12, "tags": ["calm"], "next": [] }
+  ]
+}

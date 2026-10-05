@@ -1,0 +1,241 @@
+{
+  "_comment": "MVP provisional values. Claude must keep these tunable; do not treat as final balance. v1.1 (2026-10-02 spec review): added sim/stat/furnace/lost parameters. Ranges [a, b] mean value at stat 0 -> value at stat 100 (linear). Assets/NagaRace/Config/game_balance_defaults.json is the source of truth (moved from config/ in M0).",
+  "version": "1.1",
+  "race": {
+    "entrantCount": 8,
+    "targetDurationSeconds": [
+      45,
+      90
+    ],
+    "championshipTargetDurationSeconds": [
+      90,
+      110
+    ],
+    "tickRate": 20,
+    "timeoutSeconds": 240,
+    "segmentSpeedJitter": 0.04,
+    "collisionBaseDurabilityDamage": 1,
+    "startSpeedRatio": 0.3,
+    "progressEpsilon": 1e-09,
+    "goodFlowEventThreshold": 0.025
+  },
+  "stats": {
+    "min": 0,
+    "max": 100,
+    "rankThresholds": {
+      "S": 90,
+      "A": 75,
+      "B": 60,
+      "C": 45,
+      "D": 30
+    },
+    "flowRateRange": [
+      0.94,
+      1.06
+    ],
+    "accelRateRange": [
+      3.0,
+      9.0
+    ],
+    "roughnessPenaltyByBuoyancy": [
+      0.15,
+      0.03
+    ],
+    "contactSlowdownByStability": [
+      0.25,
+      0.08
+    ],
+    "stunSecondsByStability": [
+      1.2,
+      0.3
+    ],
+    "damageMultiplierByToughness": [
+      1.4,
+      0.6
+    ],
+    "routeNoiseByJudgement": [
+      0.15,
+      0.02
+    ],
+    "blockReactionSecondsByJudgement": [
+      0.8,
+      0.2
+    ],
+    "stunSpeedFactor": 0.85,
+    "decelRate": 30.0,
+    "stumbleRatePerSecond": 0.25,
+    "stumbleHazardByStability": [
+      1.6,
+      0.4
+    ],
+    "stumbleSlowdown": 0.25,
+    "goodFlowSkewByJudgement": [
+      1.5,
+      0.67
+    ]
+  },
+  "affinity": {
+    "modifierRange": [
+      0.95,
+      1.05
+    ],
+    "distanceBands": {
+      "sprintMax": 1400,
+      "longMin": 2000
+    },
+    "deepWaterDepthMin": 0.6
+  },
+  "condition": {
+    "speedModifier": {
+      "Excellent": 1.03,
+      "Good": 1.015,
+      "Normal": 1.0,
+      "Poor": 0.985,
+      "Terrible": 0.97
+    }
+  },
+  "fatigue": {
+    "speedPenaltyStart": 50,
+    "speedPenaltyAtMax": 0.05
+  },
+  "lane": {
+    "centerFlowBonus": 0.0,
+    "edgeFlowPenalty": 0.0,
+    "racerWidthMeters": 1.2,
+    "blockDistanceMeters": 1.5,
+    "lateralSpeedPerSecond": 0.8,
+    "contactSpeedDiffThreshold": 2.0,
+    "clearLookAheadMeters": 6.0,
+    "lateralSpeedMulByAgility": [
+      0.8,
+      1.2
+    ],
+    "returnToHomeLaneDelaySeconds": 2.0
+  },
+  "conditions": {
+    "waterLevelFlowModifier": {
+      "Low": 0.92,
+      "Normal": 1.0,
+      "High": 1.08
+    },
+    "highWaterRoughnessAdd": 0.15,
+    "heavyRainDangerAdd": 1
+  },
+  "personality": {
+    "cautious": {
+      "dangerAversion": 1.6,
+      "shortcutBonus": 0.0
+    },
+    "normal": {
+      "dangerAversion": 1.0,
+      "shortcutBonus": 0.0
+    },
+    "gambler": {
+      "dangerAversion": 0.6,
+      "shortcutBonus": 0.15
+    }
+  },
+  "aiStyle": {
+    "Safe": {
+      "dangerAversionMul": 1.3,
+      "furnaceReleaseRatio": 0.7
+    },
+    "Standard": {
+      "dangerAversionMul": 1.0,
+      "furnaceReleaseRatio": 0.95
+    },
+    "Aggressive": {
+      "dangerAversionMul": 0.7,
+      "furnaceReleaseRatio": 1.15
+    }
+  },
+  "leafPower": {
+    "max": 100,
+    "furnaceMinimum": 50,
+    "passiveGainPerSecond": 2.5,
+    "behindBonusPerSecond": {
+      "5": 0.5,
+      "6": 0.8,
+      "7": 1.1,
+      "8": 1.5
+    }
+  },
+  "furnace": {
+    "outputBoostRange": [
+      0.2,
+      0.36
+    ],
+    "ignitionLagSecondsByStartup": [
+      0.6,
+      0.2
+    ],
+    "ignitionCostByStartup": [
+      20,
+      10
+    ],
+    "drainPerSecond": 7.5,
+    "safeDurationSecondsByCritical": [
+      2.5,
+      4.5
+    ],
+    "cooldownSecondsByCooling": [
+      14,
+      7
+    ],
+    "fragilityByFurnaceDurability": [
+      1.5,
+      0.6
+    ],
+    "rampStart": 0.7,
+    "rampAtSafeEnd": 1.2,
+    "rampMax": 1.35,
+    "riskRampPerSecond": 0.12,
+    "damageModifierAtZeroDurability": 2.0,
+    "fatigueModifierAtMax": 1.8,
+    "failureSeverityWeights": {
+      "short": {
+        "MinorDamage": 60,
+        "FurnaceDamage": 25,
+        "Blow": 13,
+        "Critical": 2
+      },
+      "long": {
+        "MinorDamage": 30,
+        "FurnaceDamage": 30,
+        "Blow": 30,
+        "Critical": 10
+      },
+      "longOverrunSeconds": 3.0
+    }
+  },
+  "durability": {
+    "goodMin": 70,
+    "lightDamageMin": 40,
+    "damagedMin": 20,
+    "dangerMin": 1
+  },
+  "lost": {
+    "candidateCourseDangerMin": 3,
+    "hardGuardCourseDangerMax": 2,
+    "hardGuardDurabilityMin": 40,
+    "chanceOnCandidate": 0.35
+  },
+  "training": {
+    "fatigueMax": 100,
+    "highFatigueThreshold": 70
+  },
+  "calendar": {
+    "daysPerWeek": 4,
+    "weeksPerSeason": 3,
+    "seasonsPerYear": 4,
+    "tournamentIntervalDays": 4
+  },
+  "route": {
+    "dangerPenaltyPerLevel": 0.03,
+    "crowdPenaltyPerRacer": 0.01,
+    "crowdLookAheadMeters": 40,
+    "trailingRankFrom": 5,
+    "trailingDangerAversionMul": 0.8,
+    "stumbleTimeLossSeconds": 0.8
+  }
+}
