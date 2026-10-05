@@ -155,6 +155,7 @@ namespace NagaRace.Presentation.Main
 
             _left.text = left.ToString();
             _right.text = right.ToString();
+            Tutorial.ShowOnce(Ui, "detail");
         }
 
         private void AskRetire()
@@ -164,6 +165,7 @@ namespace NagaRace.Presentation.Main
             Ui.Confirm($"{c.Name} を引退させますか？\n\n引退すると親木に登録され、因子を安全に次の世代へ残せます。\n現役には戻れません。", () =>
             {
                 var tree = Services.Retire.Retire(Services.Session, c.Id);
+                Services.Log("retire", ("character", c.Id), ("starts", c.Record.Starts), ("wins", c.Record.Wins), ("phase", c.PhaseOn(Services.Session.Day).ToString()));
                 Services.Settings.SelectedCharacterId = null;
                 Services.SaveNow();
                 Ui.Notify($"{c.Name} は引退しました。\n「{tree.Name}」が親木園に加わりました（因子 {tree.Factors.Count}個）。", () => Ui.ShowRoot<HomeScreen>());

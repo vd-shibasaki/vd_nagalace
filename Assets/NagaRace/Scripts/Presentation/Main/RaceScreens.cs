@@ -44,6 +44,8 @@ namespace NagaRace.Presentation.Main
                     BuildCard(offering, today);
                 }
             }
+
+            Tutorial.ShowOnce(Ui, "calendar");
         }
 
         private void BuildCard(TournamentOffering o, bool today)
@@ -160,6 +162,7 @@ namespace NagaRace.Presentation.Main
             }
 
             _entrants.text = list.ToString();
+            Tutorial.ShowOnce(Ui, "entry");
         }
 
         private void NextCharacter()
@@ -199,6 +202,8 @@ namespace NagaRace.Presentation.Main
         {
             Services.PendingRace = _prepared;
             Services.SaveNow();
+            Services.Log("race_start", ("tournament", _prepared.Tournament.Id), ("grade", _prepared.Tournament.Grade), ("character", _prepared.CharacterId),
+                ("risk", _prepared.Risk.Level.ToString()), ("autoFurnace", Services.Settings.AutoFurnace), ("aiStyle", Services.Settings.PlayerAiStyle.ToString()));
             SceneManager.LoadScene("Race");
         }
 
@@ -264,6 +269,7 @@ namespace NagaRace.Presentation.Main
             if (o.Placing.MaxFurnaceSeconds > 0) text.AppendLine($"葉脈炉 最長 {o.Placing.MaxFurnaceSeconds:0.0}秒");
             if (o.ParentTree != null) text.AppendLine($"\n「{o.ParentTree.Name}」が親木園に加わった");
             _text.text = text.ToString();
+            Tutorial.ShowOnce(Ui, "result");
         }
     }
 }

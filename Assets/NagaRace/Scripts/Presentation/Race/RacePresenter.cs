@@ -85,6 +85,8 @@ namespace NagaRace.Presentation.Race
         /// <summary>出走登録（Main シーン）から来たレース。null なら開発用のデバッグレース。</summary>
         private PreparedRace _gameRace;
         private bool _gameCompleted;
+        private bool _waitingTutorial;
+        private string _riskReasons;
         private readonly Dictionary<WhirlZone, GameObject> _whirlViews = new Dictionary<WhirlZone, GameObject>();
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private double _accumulator;
@@ -101,6 +103,9 @@ namespace NagaRace.Presentation.Race
         public FurnaceHud FurnaceHud => _furnaceHud;
         public RiskReport Risk => _risk;
         public bool IsWaitingRiskConfirm => _waitingRiskConfirm;
+
+        /// <summary>出走前の説明・危険度の確認待ち（どちらかが出ている）。</summary>
+        public bool IsWaitingPanel => _waitingRiskConfirm || _waitingTutorial;
 
         /// <summary>デバッグ・テスト用: 次のレースの自キャラの耐久と疲労。</summary>
         public void SetPlayerCondition(int durability, int fatigue)
@@ -165,10 +170,22 @@ namespace NagaRace.Presentation.Race
             _hud.PanelClicked += ConfirmPanel;
         }
 
-        /// <summary>危険度の確認・ロスト画面のスキップ。</summary>
+        private void ShowRiskPanel()
+        {
+            _waitingRiskConfirm = _risk.LostPossible;
+            _riskBannerRemaining = _waitingRiskConfirm ? 0f : _riskBannerSeconds;
+            _hud.ShowRisk(_risk.Label, _riskReasons, RiskColor(_risk.Level), _waitingRiskConfirm);
+        }
+
+        /// <summary>説明・危険度の確認・ロスト画面のスキップ。</summary>
         public void ConfirmPanel()
         {
-            if (_waitingRiskConfirm)
+            if (_waitingTutorial)
+            {
+                _waitingTutorial = false;
+                ShowRiskPanel();
+            }
+            else if (_waitingRiskConfirm)
             {
                 _waitingRiskConfirm = false;
                 _hud.HideRisk();
@@ -184,7 +201,7 @@ namespace NagaRace.Presentation.Race
         /// <summary>葉脈炉ボタン。待機中なら始動、稼働中なら解除（「いつ始動し、いつ止めるか」だけを操作する）。</summary>
         public void PressFurnace()
         {
-            if (_waitingRiskConfirm || _hud.IsLostPanelVisible)
+            if (_waitingRiskConfirm || _waitingTutorial || _hud.IsLostPanelVisible)
             {
                 ConfirmPanel();
                 return;
@@ -267,10 +284,21 @@ namespace NagaRace.Presentation.Race
 
             // 出走前の危険度（H-03）。Lost の可能性があるレースは確認してから始める
             _risk = RiskAssessment.Evaluate(course, conditions, entrants[0], _balance);
-            _waitingRiskConfirm = _risk.LostPossible;
-            _riskBannerRemaining = _waitingRiskConfirm ? 0f : _riskBannerSeconds;
-            string reasons = _risk.Reasons.Count > 0 ? string.Join(" / ", _risk.Reasons) : "特に問題なし";
-            _hud.ShowRisk(_risk.Label, reasons, RiskColor(_risk.Level), _waitingRiskConfirm);
+            _riskReasons = _risk.Reasons.Count > 0 ? string.Join(" / ", _risk.Reasons) : "特に問題なし";
+            string tutorial = _gameRace != null ? Tutorial.Consume(Tutorial.Race) : null;
+            if (tutorial != null)
+            {
+                // 初めてのレース: 先に操作の説明、閉じたら危険度
+                _waitingTutorial = true;
+                _waitingRiskConfirm = false;
+                _riskBannerRemaining = 0f;
+                _hud.ShowInfo(tutorial);
+            }
+            else
+            {
+                _waitingTutorial = false;
+                ShowRiskPanel();
+            }
             _cameraController.Mode = RaceCameraMode.PlayerFollow;
             _hud.HideResult();
 
@@ -333,7 +361,7 @@ namespace NagaRace.Presentation.Race
         {
             if (_simulator == null) return;
 
-            if (_waitingRiskConfirm)
+            if (_waitingRiskConfirm || _waitingTutorial)
             {
                 UpdateHud();
                 UpdateCamera();
@@ -568,6 +596,7 @@ namespace NagaRace.Presentation.Race
             var services = GameServices.Instance;
             var result = _simulator.BuildResult();
             services.LastOutcome = services.RaceDay.Complete(services.Session, _gameRace, result);
+            LogRaceEnd(services, result);
             services.LastResult = result;
             services.PendingRace = null;
             services.SaveNow();
@@ -699,6 +728,27 @@ namespace NagaRace.Presentation.Race
                 renderer.SetPropertyBlock(block);
                 _whirlViews[zone] = disc;
             }
+        }
+
+        /// <summary>11 §8: レース結果・炉の始動タイミング・OVER FLOW・ロスト。</summary>
+        private void LogRaceEnd(GameServices services, RaceResult result)
+        {
+            var placing = result.PlacingOf(_playerIndex);
+            var starts = new List<double>();
+            int overflows = 0;
+            int failures = 0;
+            foreach (var e in result.Events)
+            {
+                if (e.EntrantIndex != _playerIndex) continue;
+                if (e.Type == RaceEventType.FurnaceStart) starts.Add(System.Math.Round(e.Tick / (double)_simulator.TickRate, 1));
+                else if (e.Type == RaceEventType.FurnaceOverflow) overflows++;
+                else if (e.Type == RaceEventType.FurnaceFailureOccurred) failures++;
+            }
+
+            services.Log("race_end", ("tournament", _gameRace.Tournament.Id), ("rank", placing.Rank), ("timeMs", placing.FinishTimeMilliseconds),
+                ("retired", placing.Retired), ("lost", placing.Lost), ("furnaceStartSeconds", starts), ("overflows", overflows), ("failures", failures),
+                ("maxFurnaceSeconds", System.Math.Round(placing.MaxFurnaceSeconds, 2)), ("autoFurnace", _simulator.Racers[_playerIndex].AutoControl));
+            if (placing.Lost) services.Log("lost", ("character", _gameRace.CharacterId), ("tournament", _gameRace.Tournament.Id));
         }
 
         private static string SkillLabel(ObstructionSkill skill)

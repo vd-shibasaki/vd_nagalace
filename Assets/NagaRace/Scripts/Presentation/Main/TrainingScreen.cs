@@ -65,6 +65,8 @@ namespace NagaRace.Presentation.Main
             {
                 BuildCard(def, preview, best);
             }
+
+            Tutorial.ShowOnce(Ui, "training");
         }
 
         private void BuildCard(TrainingDefinition def, TrainingPreview preview, double best)
@@ -116,8 +118,11 @@ namespace NagaRace.Presentation.Main
         private void Execute(TrainingDefinition def, bool confirmedExtreme)
         {
             var c = Ui.SelectedCharacter;
+            var weather = Services.Session.TodayConditions(Services.Balance).Weather.ToString();
             var result = Services.Training.Execute(Services.Session, c.Id, def.Id, confirmedExtreme);
             Services.SaveNow();
+            Services.Log("training_choice", ("training", def.Id), ("character", c.Id), ("weather", weather), ("efficiency", System.Math.Round(result.Efficiency, 3)),
+                ("fatigueBefore", result.FatigueBefore), ("injury", result.Injury), ("lost", result.Lost));
 
             var text = new StringBuilder();
             text.AppendLine($"<b>{c.Name}</b> は「{def.Name}」をした。");

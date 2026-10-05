@@ -27,6 +27,7 @@ namespace NagaRace.Infrastructure.Save
         public string PlayerAiStyle { get; set; }
         public float PlaybackSpeed { get; set; } = 1f;
         public string SelectedCharacterId { get; set; }
+        public List<string> TutorialSeen { get; set; } = new List<string>();
     }
 
     public sealed class CharacterDto

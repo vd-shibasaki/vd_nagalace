@@ -24,6 +24,7 @@ namespace NagaRace.Presentation.Main
         {
             UiKit.Font = _font;
             var services = GameServices.Ensure(_assets);
+            SessionTracker.Ensure();
 
             Ui = gameObject.AddComponent<MainUi>();
             Ui.Initialize(

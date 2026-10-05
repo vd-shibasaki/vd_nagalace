@@ -27,6 +27,7 @@ namespace NagaRace.Infrastructure.Save
                     PlayerAiStyle = settings.PlayerAiStyle.ToString(),
                     PlaybackSpeed = settings.PlaybackSpeed,
                     SelectedCharacterId = settings.SelectedCharacterId,
+                    TutorialSeen = settings.TutorialSeen.OrderBy(k => k, StringComparer.Ordinal).ToList(),
                 },
             };
 
@@ -60,6 +61,7 @@ namespace NagaRace.Infrastructure.Save
                 PlayerAiStyle = ParseEnum(s.PlayerAiStyle, AiStyle.Standard),
                 PlaybackSpeed = s.PlaybackSpeed <= 0 ? 1f : s.PlaybackSpeed,
                 SelectedCharacterId = s.SelectedCharacterId,
+                TutorialSeen = new HashSet<string>(s.TutorialSeen ?? new List<string>()),
             };
             return (session, settings);
         }

@@ -105,6 +105,13 @@ namespace NagaRace.Tests.PlayMode
             Ui.Get<TitleScreen>().Continue();
             Assert.IsInstanceOf<HomeScreen>(Ui.Current);
             Assert.AreEqual(day, GameServices.Instance.Session.Day);
+
+            // プレイログ（11 §8）が記録されている
+            var log = File.ReadAllText(GameServices.Instance.AnalyticsPath);
+            foreach (var name in new[] { "new_game", "tutorial_step", "training_choice", "race_start", "race_end", "session_start" })
+            {
+                StringAssert.Contains($"\"event\":\"{name}\"", log, $"プレイログに {name} がない");
+            }
         }
 
         /// <summary>目視確認用。NAGARACE_SCREENSHOT_DIR を設定し、描画ありで実行したときだけ撮る。</summary>
@@ -197,7 +204,7 @@ namespace NagaRace.Tests.PlayMode
             var presenter = Object.FindFirstObjectByType<RacePresenter>();
             Assert.IsNotNull(presenter, "Race シーンに移らない");
             Assert.IsTrue(presenter.IsGameRace);
-            presenter.ConfirmPanel();
+            for (int i = 0; i < 3 && presenter.IsWaitingPanel; i++) presenter.ConfirmPanel();
             presenter.PlaybackSpeed = 20f;
             int frames = 0;
             while (!presenter.Simulator.IsFinished && frames++ < 6000) yield return null;

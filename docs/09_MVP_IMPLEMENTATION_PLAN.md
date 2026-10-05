@@ -275,6 +275,12 @@
 ### 完了条件
 第三者へビルドを渡して説明なしで遊べる。
 
+### 【v1.1】M10 の先行実装（2026-10-05）
+- チュートリアル: 各画面を初めて開いたときに1回だけ説明を出す（ホーム・育成・大会・出走登録・リザルト・詳細・親木園）。初めてのレースは、スタート前に葉力・葉脈炉・葉力チャンスの説明を出す。既読はセーブし、設定から「もう一度見る」でリセット
+- プレイログ（11 §8）: `persistentDataPath/save/logs/events.jsonl` に JSON Lines で記録（外部送信なし、2MB で1世代ローテーション）。new_game / continue / tutorial_step / training_choice / race_start / race_end（着順・炉の始動秒・OVER FLOW 回数・故障）/ lost / retire / grafting / session_start / session_end
+- ビルド: `NagaRace > Build > Windows (Tester Build)` / `Android (APK)`。横画面固定。Windows ビルドは成功を確認（96MB）。Android は Android Build Support の導入が必要
+- 未着手（人手が必要）: 第三者テスト、実機での性能測定と端末下限の確定（10 I）、正式な日本語フォント、バランスの本調整
+
 ---
 
 # Claudeへの重要指示

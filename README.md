@@ -86,6 +86,12 @@ Assets/NagaRace/
 4. 引退させた葉っぱは親木になり、親木園で接ぎ木できる
 5. セーブは自動（`Application.persistentDataPath/save/slot0.json`）
 
+### ビルド・ログ
+
+- メニュー `NagaRace > Build > Windows (Tester Build)` → `Builds/Windows/NagaRace.exe`（テスター配布用）
+- メニュー `NagaRace > Build > Android (APK)` → `Builds/Android/NagaRace.apk`（Android Build Support が必要）
+- プレイログ: `%USERPROFILE%/AppData/LocalLow/DefaultCompany/NagaRace/save/logs/events.jsonl`（外部送信なし）
+
 ### レース画面を見る（M2）
 
 1. `Assets/NagaRace/Scenes/Race.unity` を開いて Play

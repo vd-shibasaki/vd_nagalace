@@ -28,6 +28,11 @@ namespace NagaRace.Presentation.Main
             stack.sizeDelta = new Vector2(700, 600);
             _speed = UiKit.Button(stack, "レースの再生速度", NextSpeed, UiKit.Card, 600, 80);
             _auto = UiKit.Button(stack, "おまかせ炉", ToggleAuto, UiKit.Card, 600, 80);
+            UiKit.Button(stack, "チュートリアルをもう一度見る", () =>
+            {
+                Tutorial.ResetAll();
+                Ui.Toast("各画面の説明をもう一度表示します");
+            }, UiKit.Card, 600, 80);
             UiKit.Button(stack, "タイトルへ戻る", () => Ui.ShowRoot<TitleScreen>(), UiKit.Muted, 600, 80);
             UiKit.Button(stack, "セーブデータを消す", AskDelete, UiKit.Danger, 600, 80);
         }
@@ -130,6 +135,7 @@ namespace NagaRace.Presentation.Main
             }
 
             _preview.text = BuildPreviewText();
+            Tutorial.ShowOnce(Ui, "tree");
         }
 
         private string BuildPreviewText()
@@ -198,6 +204,8 @@ namespace NagaRace.Presentation.Main
             var candidate = _current[index];
             string name = NameFor(candidate.Character.SpeciesId, Services.Session.Roster.Active.Count + Services.Session.Roster.Album.Count);
             Services.Grafting.Adopt(Services.Session, candidate, name);
+            Services.Log("grafting", ("treeA", _a), ("treeB", _b), ("generation", candidate.Character.Generation), ("mutation", candidate.Character.MutationId),
+                ("factors", candidate.Character.Factors.Count));
             Services.Settings.SelectedCharacterId = candidate.Character.Id;
             Services.SaveNow();
             Ui.Notify($"新しい若葉「{name}」を迎えた！（{candidate.Character.Generation}世代）", () => Ui.ShowRoot<HomeScreen>());

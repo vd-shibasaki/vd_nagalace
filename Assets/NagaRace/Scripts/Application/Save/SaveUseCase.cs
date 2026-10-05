@@ -12,6 +12,9 @@ namespace NagaRace.Application.Save
         public float PlaybackSpeed { get; set; } = 1f;
         /// <summary>ホームで選んでいる個体。</summary>
         public string SelectedCharacterId { get; set; }
+
+        /// <summary>表示済みのチュートリアル（キー）。</summary>
+        public System.Collections.Generic.HashSet<string> TutorialSeen { get; set; } = new System.Collections.Generic.HashSet<string>();
     }
 
     public enum SaveSource

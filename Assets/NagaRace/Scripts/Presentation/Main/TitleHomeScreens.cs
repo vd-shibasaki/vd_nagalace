@@ -59,14 +59,17 @@ namespace NagaRace.Presentation.Main
             }
 
             if (result.Error != null) Ui.Toast("バックアップから復元しました");
+            Services.Log("continue", ("characters", Services.Session.Roster.Active.Count));
             Ui.ShowRoot<HomeScreen>();
         }
 
         private void StartNew()
         {
             Services.StartNewGame((ulong)DateTime.UtcNow.Ticks);
+            Services.Log("new_game");
+            // 歓迎のあとでホームの説明を出す（ダイアログは1つずつ）
+            Ui.Notify("川辺の拠点に、3枚の若葉がやってきた。\n\n育てて、流して、最高峰 MOST HIGHER RIVER を目指そう。", () => Tutorial.ShowOnce(Ui, "home"));
             Ui.ShowRoot<HomeScreen>();
-            Ui.Notify("川辺の拠点に、3枚の若葉がやってきた。\n\n育てて、流して、最高峰 MOST HIGHER RIVER を目指そう。");
         }
     }
 
@@ -139,6 +142,7 @@ namespace NagaRace.Presentation.Main
                 $"最高到達: {GradeLabel(Services.Session.TopGradeWon)}\n" +
                 "遠くに MOST HIGHER RIVER が見える…";
             _raceButton.interactable = c != null;
+            Tutorial.ShowOnce(Ui, "home");
         }
 
         private void Rest()

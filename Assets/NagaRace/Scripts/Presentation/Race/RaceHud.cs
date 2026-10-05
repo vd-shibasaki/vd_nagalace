@@ -103,6 +103,14 @@ namespace NagaRace.Presentation.Race
                 + (needsConfirm ? "\n\n<size=26>ロストの可能性があります。Space / クリックで出走</size>" : string.Empty);
         }
 
+        /// <summary>説明パネル（初めてのレースのチュートリアル）。クリック / Space で閉じる。</summary>
+        public void ShowInfo(string text)
+        {
+            _riskPanel.SetActive(true);
+            _riskImage.color = new Color(0.05f, 0.18f, 0.16f, 0.94f);
+            _riskText.text = text + "\n\n<size=24>Space / クリックで次へ</size>";
+        }
+
         public void HideRisk()
         {
             _riskPanel.SetActive(false);

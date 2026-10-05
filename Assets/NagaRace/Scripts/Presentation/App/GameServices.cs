@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NagaRace.Application.Analytics;
 using NagaRace.Application.Game;
 using NagaRace.Application.Lineage;
 using NagaRace.Application.Race;
@@ -8,6 +9,7 @@ using NagaRace.Application.Training;
 using NagaRace.Domain.Balance;
 using NagaRace.Domain.Race;
 using NagaRace.Domain.Training;
+using NagaRace.Infrastructure.Analytics;
 using NagaRace.Infrastructure.Config;
 using NagaRace.Infrastructure.Data;
 using NagaRace.Infrastructure.Save;
@@ -61,6 +63,21 @@ namespace NagaRace.Presentation.App
             Grafting = new GraftingUseCase(BalanceRepository, Species, Lineage);
             Retire = new RetireUseCase(BalanceRepository, Lineage);
             Save = new SaveUseCase(new JsonSaveRepository(saveDirectory));
+            Analytics = new JsonlAnalyticsSink(System.IO.Path.Combine(saveDirectory, "logs", "events.jsonl"));
+            AnalyticsPath = System.IO.Path.Combine(saveDirectory, "logs", "events.jsonl");
+        }
+
+        /// <summary>プレイログ（11 §8）。端末内のファイルにだけ記録する。</summary>
+        public IAnalyticsSink Analytics { get; }
+        public string AnalyticsPath { get; }
+
+        /// <summary>プレイログを1件記録する。日付は自動で付ける。</summary>
+        public void Log(string eventName, params (string key, object value)[] data)
+        {
+            var dictionary = new Dictionary<string, object>();
+            if (Session != null) dictionary["day"] = Session.Day;
+            foreach (var (key, value) in data) dictionary[key] = value;
+            Analytics.Log(eventName, dictionary);
         }
 
         public static GameServices Instance { get; private set; }
