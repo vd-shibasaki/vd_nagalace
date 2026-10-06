@@ -90,6 +90,8 @@ namespace NagaRace.Presentation.Race
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private double _accumulator;
         private int _processedEvents;
+        private RaceCommentator _commentator;
+        private int _shownCommentary;
         private int _playerIndex;
         private bool _resultShown;
         private double _postFinishSeconds;
@@ -288,6 +290,9 @@ namespace NagaRace.Presentation.Race
             _playerIndex = 0;
             _accumulator = 0;
             _processedEvents = 0;
+            _commentator = new RaceCommentator(_simulator, _playerIndex);
+            _shownCommentary = 0;
+            _hud.ClearCommentary();
             _resultShown = false;
             _lostShown = false;
             _postFinishSeconds = 0;
@@ -502,8 +507,19 @@ namespace NagaRace.Presentation.Race
             _hud.Minimap?.UpdateDots(_interpolated);
         }
 
+        /// <summary>実況（文字）を進めて、新しい行を HUD に出す。</summary>
+        private void ProcessCommentary()
+        {
+            _commentator.Update();
+            var lines = _commentator.Lines;
+            // 早送り中に何行もたまったら、最後の行だけ出す（読めない速さで流さない）
+            if (lines.Count - _shownCommentary > 1) _shownCommentary = lines.Count - 1;
+            for (; _shownCommentary < lines.Count; _shownCommentary++) _hud.ShowCommentary(lines[_shownCommentary].Text, lines[_shownCommentary].AboutPlayer);
+        }
+
         private void ProcessEvents()
         {
+            ProcessCommentary();
             var events = _simulator.Events;
             for (; _processedEvents < events.Count; _processedEvents++)
             {
@@ -763,16 +779,7 @@ namespace NagaRace.Presentation.Race
             if (placing.Lost) services.Log("lost", ("character", _gameRace.CharacterId), ("tournament", _gameRace.Tournament.Id));
         }
 
-        private static string SkillLabel(ObstructionSkill skill)
-        {
-            switch (skill)
-            {
-                case ObstructionSkill.Ram: return "体当たり";
-                case ObstructionSkill.Mud: return "泥はね";
-                case ObstructionSkill.Whirl: return "渦おこし";
-                default: return "葉力妨害";
-            }
-        }
+        private static string SkillLabel(ObstructionSkill skill) => RaceCommentator.SkillName(skill);
 
         private static string AiStyleLabel(AiStyle style)
         {
@@ -802,17 +809,7 @@ namespace NagaRace.Presentation.Race
         }
 
         /// <summary>Segment の表示名（タグから決める）。</summary>
-        public static string SectionLabel(FlowSegment segment)
-        {
-            if (segment.HasTag(SegmentTags.Waterfall)) return "滝";
-            if (segment.HasTag(SegmentTags.Whirlpool)) return "渦";
-            if (segment.HasTag(SegmentTags.Shortcut)) return "近道";
-            if (segment.HasTag(SegmentTags.Narrow)) return "狭い岩間";
-            if (segment.HasTag(SegmentTags.Rapid)) return "激流";
-            if (segment.HasTag(SegmentTags.Mud)) return "泥の流れ";
-            if (segment.IsGoal) return "最終直線";
-            return "穏やかな流れ";
-        }
+        public static string SectionLabel(FlowSegment segment) => RaceCommentator.SectionName(segment);
 
         private static string FormatTime(double seconds)
         {

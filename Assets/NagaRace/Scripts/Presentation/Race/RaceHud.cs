@@ -48,6 +48,11 @@ namespace NagaRace.Presentation.Race
         private Text _resultText;
         private RectTransform _minimapRoot;
         private Canvas _canvas;
+        private GameObject _commentaryPanel;
+        private Image _commentaryBar;
+        private Text _commentaryText;
+        private Text _commentaryPrevious;
+        private float _commentaryAge = -1f;
 
         public MinimapView Minimap { get; private set; }
 
@@ -85,6 +90,7 @@ namespace NagaRace.Presentation.Race
             BuildTopRight();
             BuildNotices();
             BuildBottom();
+            BuildCommentary();
             BuildPlayerLabel(playerName);
             BuildResultPanel();
             BuildRiskPanel();
@@ -221,6 +227,27 @@ namespace NagaRace.Presentation.Race
             }
         }
 
+        /// <summary>現在の実況（テスト・デバッグ用）。</summary>
+        public string CommentaryLabel => _commentaryText != null ? _commentaryText.text : string.Empty;
+
+        /// <summary>左下の実況欄に1行出す。前の行は上に小さく残す。aboutPlayer なら左の帯をオレンジにする。</summary>
+        public void ShowCommentary(string text, bool aboutPlayer)
+        {
+            _commentaryPrevious.text = _commentaryText.text;
+            _commentaryText.text = text;
+            _commentaryBar.color = aboutPlayer ? PlayerHighlight : Green;
+            _commentaryPanel.SetActive(true);
+            _commentaryAge = 0f;
+        }
+
+        public void ClearCommentary()
+        {
+            _commentaryText.text = string.Empty;
+            _commentaryPrevious.text = string.Empty;
+            _commentaryPanel.SetActive(false);
+            _commentaryAge = -1f;
+        }
+
         public void ClearNotices()
         {
             for (int i = 0; i < _noticeTexts.Count; i++)
@@ -287,6 +314,19 @@ namespace NagaRace.Presentation.Race
 
         private void Update()
         {
+            // 新しい実況は少し下からふわっと出す
+            if (_commentaryAge >= 0f)
+            {
+                _commentaryAge += Time.deltaTime;
+                float t = Mathf.Clamp01(_commentaryAge / 0.25f);
+                float e = 1f - (1f - t) * (1f - t);
+                var c = _commentaryText.color;
+                c.a = e;
+                _commentaryText.color = c;
+                _commentaryText.rectTransform.anchoredPosition = new Vector2(24f, -46f - 14f * (1f - e));
+                if (t >= 1f) _commentaryAge = -1f;
+            }
+
             for (int i = 0; i < _noticeTexts.Count; i++)
             {
                 if (_noticeTimers[i] <= 0f) continue;
@@ -344,6 +384,27 @@ namespace NagaRace.Presentation.Race
             var anchor = new Vector2(1f, 0f);
             _speedText = UiFactory.Label("Speed", _safeRoot, _font, 34, TextAnchor.LowerRight, anchor, anchor, new Vector2(-32f, 28f), new Vector2(300f, 50f), Color.white);
             // 葉力ゲージ・葉脈炉ボタンは FurnaceHud が下部中央に置く。TODO(M4): 耐久表示を追加
+        }
+
+        /// <summary>実況欄（左下。操作の案内の上、順位表の下の空いている所）。</summary>
+        private void BuildCommentary()
+        {
+            var anchor = new Vector2(0f, 0f);
+            var panel = UiFactory.Panel("Commentary", _safeRoot, anchor, anchor, new Vector2(24f, 140f), new Vector2(520f, 132f), PanelColor);
+            panel.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.2f);
+            _commentaryPanel = panel.gameObject;
+
+            var top = new Vector2(0f, 1f);
+            _commentaryBar = UiFactory.Panel("Bar", panel.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(8f, 108f), Green);
+            var tag = UiFactory.Panel("Tag", panel.transform, top, top, new Vector2(24f, -12f), new Vector2(84f, 30f), Green);
+            UiFactory.Label("Label", tag.transform, _font, 19, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(84f, 30f), Color.white).text = "<b>実況</b>";
+            _commentaryPrevious = UiFactory.Label("Previous", panel.transform, _font, 19, TextAnchor.MiddleLeft, top, top, new Vector2(120f, -12f), new Vector2(384f, 30f), new Color(0.43f, 0.49f, 0.46f));
+            _commentaryPrevious.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _commentaryPrevious.verticalOverflow = VerticalWrapMode.Truncate;
+            _commentaryText = UiFactory.Label("Text", panel.transform, _font, 27, TextAnchor.UpperLeft, top, top, new Vector2(24f, -46f), new Vector2(480f, 78f), Dark);
+            _commentaryText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _commentaryText.verticalOverflow = VerticalWrapMode.Truncate;
+            ClearCommentary();
         }
 
         private void BuildPlayerLabel(string playerName)
