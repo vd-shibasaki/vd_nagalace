@@ -255,11 +255,19 @@ namespace NagaRace.Tests.PlayMode
             yield return FinishRaceAndReturn();
         }
 
+        /// <summary>シーン切り替えのワイプ演出が終わるまで待つ。</summary>
+        private static IEnumerator WaitSceneTransition()
+        {
+            yield return null;
+            for (int i = 0; i < 600 && SceneFader.IsBusy; i++) yield return null;
+            Assert.IsFalse(SceneFader.IsBusy, "シーン切り替えの演出が終わらない");
+            yield return null;
+        }
+
         /// <summary>Race シーンでレースを最後まで進め、Main のリザルトからホームへ戻る。</summary>
         private static IEnumerator FinishRaceAndReturn()
         {
-            yield return null;
-            yield return null;
+            yield return WaitSceneTransition();
             var presenter = Object.FindFirstObjectByType<RacePresenter>();
             Assert.IsNotNull(presenter, "Race シーンに移らない");
             Assert.IsTrue(presenter.IsGameRace);
@@ -273,8 +281,7 @@ namespace NagaRace.Tests.PlayMode
             presenter.CompleteGameRace();
 
             // Main シーンへ戻ってリザルト
-            yield return null;
-            yield return null;
+            yield return WaitSceneTransition();
             Assert.IsInstanceOf<ResultScreen>(Ui.Current, "レース後にリザルトが出ない");
             Ui.ShowRoot<HomeScreen>();
         }

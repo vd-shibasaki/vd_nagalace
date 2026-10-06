@@ -19,6 +19,8 @@ namespace NagaRace.Presentation.Main
         protected MainUi Ui { get; }
         protected GameServices Services => GameServices.Instance;
         public RectTransform Root { get; private set; }
+        /// <summary>切り替え演出（フェード）用。</summary>
+        public CanvasGroup Group { get; private set; }
         public abstract string Title { get; }
         /// <summary>ヘッダーに「戻る」を出すか。</summary>
         public virtual bool ShowBack => true;
@@ -32,6 +34,7 @@ namespace NagaRace.Presentation.Main
         public void Build(RectTransform parent)
         {
             Root = UiKit.Rect(GetType().Name, parent);
+            Group = Root.gameObject.AddComponent<CanvasGroup>();
             Layout();
             OnBuild(Root);
             Root.gameObject.SetActive(false);
@@ -87,6 +90,19 @@ namespace NagaRace.Presentation.Main
         private float _toastRemaining;
         private int _activeNav = -1;
 
+        // 切り替え演出（画面: スライド＋フェード / ダイアログ: ポップ / トースト: せり上げ）
+        private const float ScreenTransitionSeconds = 0.24f;
+        private const float DialogPopSeconds = 0.2f;
+        private const float SlideDistance = 90f;
+        private UiScreen _entering;
+        private Vector2 _enteringBase;
+        private float _enteringDirection;
+        private float _enteringTime = -1f;
+        private CanvasGroup _dialogGroup;
+        private float _dialogTime = -1f;
+        private RectTransform _toastRect;
+        private float _toastTime = -1f;
+
         public UiScreen Current { get; private set; }
         public bool IsDialogOpen => _dialog != null && _dialog.activeSelf;
         public TapEffectLayer TapEffects { get; private set; }
@@ -122,7 +138,7 @@ namespace NagaRace.Presentation.Main
                 if (remember && Current != next) _history.Push(Current);
             }
 
-            Activate(next);
+            Activate(next, Current == null ? 0f : 1f);
         }
 
         /// <summary>履歴を消して表示する（ホーム・タイトル・リザルト）。</summary>
@@ -141,21 +157,27 @@ namespace NagaRace.Presentation.Main
             if (Current != null) Current.Root.gameObject.SetActive(false);
             var home = _screens[typeof(HomeScreen)];
             if (screen != typeof(HomeScreen)) _history.Push(home);
-            Activate(_screens[screen]);
+            // 下部メニューの並び順に合わせて、右のタブへは右から、左のタブへは左から入る
+            int from = NavigationIndex(Current);
+            int to = NavigationIndex(_screens[screen]);
+            Activate(_screens[screen], from < 0 || to < 0 || from == to ? 0f : Mathf.Sign(to - from));
         }
 
         public void Back()
         {
             if (_history.Count == 0) return;
             Current.Root.gameObject.SetActive(false);
-            Activate(_history.Pop());
+            Activate(_history.Pop(), -1f);
         }
 
-        private void Activate(UiScreen screen)
+        private void Activate(UiScreen screen, float direction = 0f)
         {
+            // 前の画面の演出が途中なら終わらせる
+            FinishScreenTransition();
             Current = screen;
             Current.Layout();
             Current.Root.gameObject.SetActive(true);
+            BeginScreenTransition(Current, direction);
             bool ready = GameServices.Instance?.Session != null;
             _header.SetActive(ready && Current.ShowHeader);
             _navigation.SetActive(ready && Current.ShowNavigation);
@@ -216,10 +238,90 @@ namespace NagaRace.Presentation.Main
             _toast.text = message;
             _toastRemaining = 2.5f;
             _toastBox.SetActive(true);
+            _toastTime = 0f;
+        }
+
+        /// <summary>切り替え演出をすぐに終わらせる（テスト・スクリーンショット用）。</summary>
+        public void SkipTransitions()
+        {
+            FinishScreenTransition();
+            UpdateTransitions(10f);
+        }
+
+        /// <summary>direction: 1 = 右から入る（進む）、-1 = 左から入る（戻る）、0 = その場でフェード。</summary>
+        private void BeginScreenTransition(UiScreen screen, float direction)
+        {
+            _entering = screen;
+            _enteringBase = screen.Root.anchoredPosition;
+            _enteringDirection = direction;
+            _enteringTime = 0f;
+            ApplyScreenTransition(0f);
+        }
+
+        private void FinishScreenTransition()
+        {
+            if (_entering == null) return;
+            ApplyScreenTransition(1f);
+            _entering = null;
+            _enteringTime = -1f;
+        }
+
+        private void ApplyScreenTransition(float t)
+        {
+            float e = EaseOutCubic(t);
+            _entering.Group.alpha = Mathf.Lerp(0.15f, 1f, e);
+            // 方向なし（ホーム・タイトル）は少し下から浮かび上がる
+            var offset = _enteringDirection != 0f
+                ? new Vector2(_enteringDirection * SlideDistance * (1f - e), 0f)
+                : new Vector2(0f, -SlideDistance * 0.4f * (1f - e));
+            _entering.Root.anchoredPosition = _enteringBase + offset;
+        }
+
+        private void UpdateTransitions(float dt)
+        {
+            if (_entering != null && _enteringTime >= 0f)
+            {
+                _enteringTime += dt;
+                if (_enteringTime >= ScreenTransitionSeconds) FinishScreenTransition();
+                else ApplyScreenTransition(_enteringTime / ScreenTransitionSeconds);
+            }
+
+            if (_dialogTime >= 0f)
+            {
+                _dialogTime += dt;
+                float t = Mathf.Clamp01(_dialogTime / DialogPopSeconds);
+                _dialogGroup.alpha = EaseOutCubic(t);
+                _dialogBox.localScale = Vector3.one * Mathf.LerpUnclamped(0.86f, 1f, EaseOutBack(t));
+                if (t >= 1f) _dialogTime = -1f;
+            }
+
+            if (_toastTime >= 0f && _toastBox.activeSelf)
+            {
+                _toastTime += dt;
+                float t = Mathf.Clamp01(_toastTime / DialogPopSeconds);
+                _toastRect.anchoredPosition = new Vector2(0, NavigationHeight + 30 - 50f * (1f - EaseOutCubic(t)));
+                if (t >= 1f) _toastTime = -1f;
+            }
+        }
+
+        private static float EaseOutCubic(float t)
+        {
+            t = Mathf.Clamp01(t);
+            float u = 1f - t;
+            return 1f - u * u * u;
+        }
+
+        private static float EaseOutBack(float t)
+        {
+            const float c1 = 1.70158f;
+            const float c3 = c1 + 1f;
+            float u = t - 1f;
+            return 1f + c3 * u * u * u + c1 * u * u;
         }
 
         private void Update()
         {
+            UpdateTransitions(Time.unscaledDeltaTime);
             if (_toastRemaining > 0)
             {
                 _toastRemaining -= Time.unscaledDeltaTime;
@@ -250,7 +352,13 @@ namespace NagaRace.Presentation.Main
             int lines = 0;
             foreach (var line in plain.Split('\n')) lines += 1 + line.Length / 30;
             _dialogBox.sizeDelta = lines <= 4 ? new Vector2(940, 440) : new Vector2(1120, 720);
+            if (!_dialog.activeSelf) _dialogTime = 0f;
             _dialog.SetActive(true);
+            if (_dialogTime == 0f)
+            {
+                _dialogGroup.alpha = 0f;
+                _dialogBox.localScale = Vector3.one * 0.86f;
+            }
         }
 
         private void UpdateNavigation()
@@ -371,6 +479,7 @@ namespace NagaRace.Presentation.Main
             shade.raycastTarget = true;
             UiKit.Stretch(shade.rectTransform, -200, -200, -200, -200);
             _dialog = shade.gameObject;
+            _dialogGroup = _dialog.AddComponent<CanvasGroup>();
 
             var box = UiKit.Panel("Box", shade.transform, Color.white);
             UiKit.AddShadow(box.gameObject, 8f, 0.25f);
@@ -403,6 +512,7 @@ namespace NagaRace.Presentation.Main
         {
             var box = UiKit.Panel("Toast", safe, new Color(0.18f, 0.3f, 0.22f, 0.92f));
             var rect = box.rectTransform;
+            _toastRect = rect;
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0);
             rect.pivot = new Vector2(0.5f, 0);
             rect.anchoredPosition = new Vector2(0, NavigationHeight + 30);

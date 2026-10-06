@@ -72,6 +72,7 @@ namespace NagaRace.Presentation.Race
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            canvasObject.AddComponent<App.AdaptiveCanvasScaler>();
 
             _safeRoot = UiFactory.Rect("SafeArea", canvasObject.transform, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             _safeRoot.anchorMin = Vector2.zero;

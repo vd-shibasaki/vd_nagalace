@@ -73,6 +73,7 @@ namespace NagaRace.Presentation.App
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+            go.AddComponent<AdaptiveCanvasScaler>();
             var safe = Rect("SafeArea", go.transform);
             Stretch(safe);
             safe.gameObject.AddComponent<Race.SafeAreaFitter>();
