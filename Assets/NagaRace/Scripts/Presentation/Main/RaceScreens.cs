@@ -6,7 +6,6 @@ using NagaRace.Domain.Race;
 using NagaRace.Domain.Training;
 using NagaRace.Presentation.App;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace NagaRace.Presentation.Main
@@ -220,7 +219,7 @@ namespace NagaRace.Presentation.Main
             Services.SaveNow();
             Services.Log("race_start", ("tournament", _prepared.Tournament.Id), ("grade", _prepared.Tournament.Grade), ("character", _prepared.CharacterId),
                 ("risk", _prepared.Risk.Level.ToString()), ("autoFurnace", Services.Settings.AutoFurnace), ("aiStyle", Services.Settings.PlayerAiStyle.ToString()));
-            SceneManager.LoadScene("Race");
+            SceneFader.LoadScene("Race");
         }
 
         public static string StyleLabel(AiStyle style)

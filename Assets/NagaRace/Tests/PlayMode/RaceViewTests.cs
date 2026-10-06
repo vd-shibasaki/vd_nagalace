@@ -249,11 +249,17 @@ namespace NagaRace.Tests.PlayMode
             return viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f;
         }
 
-        /// <summary>カメラと HUD を RenderTexture へ描いて PNG 保存する。</summary>
+        /// <summary>カメラと HUD を RenderTexture へ描いて PNG 保存する（16:9 / 4:3 / 21:9）。</summary>
         private static void Capture(RacePresenter presenter, string path)
         {
-            const int width = 1600;
-            const int height = 900;
+            Capture(presenter, path, 1600, 900);
+            Capture(presenter, path.Replace(".png", "_4x3.png"), 1440, 1080);
+            Capture(presenter, path.Replace(".png", "_21x9.png"), 2100, 900);
+            ScreenshotUtil.Rescale();
+        }
+
+        private static void Capture(RacePresenter presenter, string path, int width, int height)
+        {
             var camera = presenter.RaceCamera;
             var canvas = presenter.Hud.Canvas;
             var rt = new RenderTexture(width, height, 24);
@@ -263,7 +269,7 @@ namespace NagaRace.Tests.PlayMode
             canvas.worldCamera = camera;
             canvas.planeDistance = 1f;
             camera.targetTexture = rt;
-            Canvas.ForceUpdateCanvases();
+            ScreenshotUtil.Rescale();
             camera.Render();
 
             var previousActive = RenderTexture.active;

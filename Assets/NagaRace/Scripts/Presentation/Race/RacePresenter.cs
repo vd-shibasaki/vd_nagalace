@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using NagaRace.Application.Game;
 using NagaRace.Application.Race;
 using NagaRace.Presentation.App;
-using UnityEngine.SceneManagement;
 using NagaRace.Domain.Balance;
 using NagaRace.Domain.Characters;
 using NagaRace.Domain.Race;
@@ -613,7 +612,7 @@ namespace NagaRace.Presentation.Race
             services.LastResult = result;
             services.PendingRace = null;
             services.SaveNow();
-            SceneManager.LoadScene("Main");
+            SceneFader.LoadScene("Main");
         }
 
         private void OnGUI()
