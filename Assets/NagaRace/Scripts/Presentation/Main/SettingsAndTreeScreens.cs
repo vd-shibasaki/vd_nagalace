@@ -177,7 +177,7 @@ namespace NagaRace.Presentation.Main
                 var c = _current[i].Character;
                 var card = UiKit.CardBox($"Candidate {i}", _candidates, UiKit.Card, 14);
                 string factors = c.Factors.Count > 0 ? string.Join("・", c.Factors.Select(f => lineage.Factor(f.FactorId)?.Name)) : "因子なし";
-                string mutation = c.MutationId != null ? $"\n<color=#ffd84a>特異葉: {lineage.Mutation(c.MutationId)?.Name}</color>" : string.Empty;
+                string mutation = c.MutationId != null ? $"\n<color=#e0761a>特異葉: {lineage.Mutation(c.MutationId)?.Name}</color>" : string.Empty;
                 UiKit.Label(card,
                     $"<b>候補{i + 1}</b>　{HomeScreen.SpeciesName(c.SpeciesId)}\n" +
                     $"流速 {UiKit.Rank(c.Stats.FlowSpeed, b)} 加速 {UiKit.Rank(c.Stats.Acceleration, b)} 浮力 {UiKit.Rank(c.Stats.Buoyancy, b)}\n安定 {UiKit.Rank(c.Stats.Stability, b)} 頑丈 {UiKit.Rank(c.Stats.Toughness, b)} 判断 {UiKit.Rank(c.Stats.Judgement, b)}\n" +

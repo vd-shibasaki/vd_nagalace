@@ -40,7 +40,7 @@ namespace NagaRace.Presentation.Main
 
         protected override void OnBuild(RectTransform root)
         {
-            var top = UiKit.CardBox("Status", root, new Color(0.08f, 0.15f, 0.18f, 0.95f), 12);
+            var top = UiKit.CardBox("Status", root, UiKit.Card, 12);
             top.anchorMin = new Vector2(0, 1);
             top.anchorMax = new Vector2(1, 1);
             top.pivot = new Vector2(0.5f, 1);
@@ -60,7 +60,8 @@ namespace NagaRace.Presentation.Main
             grid.constraintCount = 5;
             _grid = gridRect;
 
-            var detailPanel = UiKit.Panel("Detail", root, new Color(0.1f, 0.2f, 0.22f, 0.97f));
+            var detailPanel = UiKit.Panel("Detail", root, UiKit.Card);
+            UiKit.AddShadow(detailPanel.gameObject, 5f, 0.14f);
             var detailRect = detailPanel.rectTransform;
             detailRect.anchorMin = new Vector2(0.58f, 0);
             detailRect.anchorMax = new Vector2(1, 1);
@@ -107,7 +108,7 @@ namespace NagaRace.Presentation.Main
             var weather = session.TodayConditions(Services.Balance).Weather;
             int daysToRace = Services.RaceDay.NextRaceDay(session) - session.Day;
             _status.text = $"<b>{c.Name}</b>　{GrowthProfile.Label(c.PhaseOn(session.Day))}期　疲労 <b>{c.Fatigue}</b>　耐久 {c.Durability}/{c.MaxDurability}　" +
-                $"今日の天気 <b>{WeatherForecast.WeatherLabel(weather)}</b>　{(daysToRace == 0 ? "<color=#ffd84a>今日はレースの日</color>" : $"レースまで {daysToRace}日")}";
+                $"今日の天気 <b>{WeatherForecast.WeatherLabel(weather)}</b>　{(daysToRace == 0 ? "<color=#e0761a>今日はレースの日</color>" : $"レースまで {daysToRace}日")}";
 
             var catalog = Services.Trainings.Load();
             _previews = catalog.Trainings.Select(t => (def: t, preview: Services.Training.Preview(session, c.Id, t.Id))).ToList();
@@ -127,6 +128,13 @@ namespace NagaRace.Presentation.Main
         private void BuildCard(TrainingDefinition def, TrainingPreview preview)
         {
             var card = UiKit.Panel($"Card {def.Id}", _grid, UiKit.Card);
+            card.raycastTarget = true;
+            UiKit.AddShadow(card.gameObject, 4f, 0.14f);
+            var outline = card.gameObject.AddComponent<Outline>();
+            outline.effectColor = UiKit.Accent;
+            outline.effectDistance = new Vector2(3f, -3f);
+            outline.enabled = false;
+            card.gameObject.AddComponent<TapTag>().Kind = TapKind.Icon;
             var button = card.gameObject.AddComponent<Button>();
             button.onClick.AddListener(() => Select(def.Id));
             _cardImages[def.Id] = card;
@@ -134,8 +142,8 @@ namespace NagaRace.Presentation.Main
             var text = new StringBuilder();
             text.AppendLine($"<size=30><b>{def.Name}</b></size>");
             text.AppendLine(MainEffect(def, preview));
-            if (def.Id == _recommendedId) text.AppendLine("<color=#ffd84a><b>★ おすすめ</b></color>");
-            else if (preview.WeatherMultiplier > 1.05) text.AppendLine("<color=#ffd84a>天気◎</color>");
+            if (def.Id == _recommendedId) text.AppendLine("<color=#e0761a><b>★ おすすめ</b></color>");
+            else if (preview.WeatherMultiplier > 1.05) text.AppendLine("<color=#e0761a>天気◎</color>");
             if (preview.Risk >= RiskLevel.Danger) text.AppendLine(RiskLabel(preview.Risk));
             var label = UiKit.Text("Text", card.transform, text.ToString(), 23, TextAnchor.UpperLeft);
             UiKit.Stretch(label.rectTransform, 12, 10, 12, 8);
@@ -155,7 +163,9 @@ namespace NagaRace.Presentation.Main
         {
             foreach (var pair in _cardImages)
             {
-                pair.Value.color = _selected != null && pair.Key == _selected.Id ? new Color(0.3f, 0.5f, 0.32f, 0.98f) : UiKit.Card;
+                bool selected = _selected != null && pair.Key == _selected.Id;
+                pair.Value.color = selected ? UiKit.CardHighlight : UiKit.Card;
+                pair.Value.GetComponent<Outline>().enabled = selected;
             }
         }
 
@@ -164,7 +174,7 @@ namespace NagaRace.Presentation.Main
             if (_selected == null) return;
             var (def, preview) = _previews.First(p => p.def.Id == _selected.Id);
             var text = new StringBuilder();
-            text.AppendLine($"<size=44><b>{def.Name}</b></size>{(def.Id == _recommendedId ? "　<color=#ffd84a>★ おすすめ</color>" : string.Empty)}");
+            text.AppendLine($"<size=44><b>{def.Name}</b></size>{(def.Id == _recommendedId ? "　<color=#e0761a>★ おすすめ</color>" : string.Empty)}");
             text.AppendLine();
             if (def.Growth.Count == 0)
             {
@@ -181,12 +191,12 @@ namespace NagaRace.Presentation.Main
             }
 
             text.AppendLine();
-            text.AppendLine(def.Fatigue >= 0 ? $"疲労　+{def.Fatigue}" : $"疲労　<color=#9fe39f>{def.Fatigue}</color>");
-            if (def.DurabilityRecovery > 0) text.AppendLine($"耐久　<color=#9fe39f>+{def.DurabilityRecovery}</color>");
+            text.AppendLine(def.Fatigue >= 0 ? $"疲労　+{def.Fatigue}" : $"疲労　<color=#2f9e4f>{def.Fatigue}</color>");
+            if (def.DurabilityRecovery > 0) text.AppendLine($"耐久　<color=#2f9e4f>+{def.DurabilityRecovery}</color>");
             text.AppendLine($"ケガの危険　{(def.Risk <= 0 ? "なし" : new string('▲', def.Risk))}　{RiskLabel(preview.Risk)}");
-            if (preview.WeatherMultiplier > 1.05) text.AppendLine("<color=#ffd84a>今日の天気に合っている（効果アップ）</color>");
-            else if (preview.WeatherMultiplier < 0.95) text.AppendLine("<color=#9ab>今日の天気には向いていない</color>");
-            if (preview.Efficiency < 0.7 && def.Growth.Count > 0) text.AppendLine("<color=#ffb060>疲れや同じならしの連続で効率が落ちています</color>");
+            if (preview.WeatherMultiplier > 1.05) text.AppendLine("<color=#e0761a>今日の天気に合っている（効果アップ）</color>");
+            else if (preview.WeatherMultiplier < 0.95) text.AppendLine("<color=#8a9891>今日の天気には向いていない</color>");
+            if (preview.Efficiency < 0.7 && def.Growth.Count > 0) text.AppendLine("<color=#e07a1f>疲れや同じならしの連続で効率が落ちています</color>");
             _detail.text = text.ToString();
         }
 
@@ -204,8 +214,8 @@ namespace NagaRace.Presentation.Main
             if (preview.NeedsConfirmation)
             {
                 string message = preview.LostPossible
-                    ? $"<color=#ff6050><b>極危険</b></color>\n{c.Name} は耐久が低く疲れ切っています。\nこのならしで<b>ロストする可能性</b>があります。本当に行いますか？"
-                    : $"<color=#ffa040><b>危険</b></color>\n「{def.Name}」はケガをしやすいならしです。行いますか？";
+                    ? $"<color=#d9442b><b>極危険</b></color>\n{c.Name} は耐久が低く疲れ切っています。\nこのならしで<b>ロストする可能性</b>があります。本当に行いますか？"
+                    : $"<color=#e07a1f><b>危険</b></color>\n「{def.Name}」はケガをしやすいならしです。行いますか？";
                 Ui.Confirm(message, () => Execute(def, preview.LostPossible), "行う", danger: true);
                 return;
             }
@@ -236,7 +246,7 @@ namespace NagaRace.Presentation.Main
             {
                 foreach (var pair in result.StatDeltas)
                 {
-                    text.AppendLine($"  {CharacterParameter.Parse(pair.Key).Label}　<color=#9fe39f><b>+{pair.Value}</b></color>");
+                    text.AppendLine($"  {CharacterParameter.Parse(pair.Key).Label}　<color=#2f9e4f><b>+{pair.Value}</b></color>");
                 }
             }
             else if (def.Growth.Count > 0)
@@ -246,16 +256,16 @@ namespace NagaRace.Presentation.Main
 
             text.AppendLine();
             text.AppendLine($"疲労 {result.FatigueBefore} → <b>{result.FatigueAfter}</b>　耐久 {result.DurabilityBefore} → <b>{result.DurabilityAfter}</b>");
-            if (result.Injury > 0) text.AppendLine($"<color=#ff8060>ケガをした（耐久 -{result.Injury}）</color>");
+            if (result.Injury > 0) text.AppendLine($"<color=#d9442b>ケガをした（耐久 -{result.Injury}）</color>");
             if (result.ConditionAfter != result.ConditionBefore) text.AppendLine($"調子 {HomeScreen.ConditionLabel(result.ConditionBefore)} → {HomeScreen.ConditionLabel(result.ConditionAfter)}");
             foreach (var id in result.NewBodyTraits)
             {
-                text.AppendLine($"<color=#ffd84a>体質「{Services.Trainings.Load().FindBodyTrait(id)?.Name}」が身についた！</color>");
+                text.AppendLine($"<color=#e0761a>体質「{Services.Trainings.Load().FindBodyTrait(id)?.Name}」が身についた！</color>");
             }
 
-            if (result.PersonalityChanged) text.AppendLine($"<color=#ffd84a>性格が「{CharacterDetailScreen.PersonalityLabel(c.Personality)}」に変わった</color>");
+            if (result.PersonalityChanged) text.AppendLine($"<color=#e0761a>性格が「{CharacterDetailScreen.PersonalityLabel(c.Personality)}」に変わった</color>");
             text.AppendLine();
-            text.AppendLine(Services.RaceDay.IsRaceDay(Services.Session) ? "<color=#ffd84a><b>今日はレースの日！</b> ホームから大会に出よう</color>" : "1日が過ぎた。");
+            text.AppendLine(Services.RaceDay.IsRaceDay(Services.Session) ? "<color=#e0761a><b>今日はレースの日！</b> ホームから大会に出よう</color>" : "1日が過ぎた。");
 
             _showingResult = true;
             Rebuild();
@@ -296,10 +306,10 @@ namespace NagaRace.Presentation.Main
         {
             switch (level)
             {
-                case RiskLevel.Caution: return "<color=#ffd84a>注意</color>";
-                case RiskLevel.Danger: return "<color=#ff9040>危険</color>";
-                case RiskLevel.Extreme: return "<color=#ff4030>極危険</color>";
-                default: return "<color=#9fe39f>安全</color>";
+                case RiskLevel.Caution: return "<color=#e0761a>注意</color>";
+                case RiskLevel.Danger: return "<color=#e07a1f>危険</color>";
+                case RiskLevel.Extreme: return "<color=#d9442b>極危険</color>";
+                default: return "<color=#2f9e4f>安全</color>";
             }
         }
     }

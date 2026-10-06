@@ -39,10 +39,10 @@ namespace NagaRace.Presentation.Main
             _recommendedId = c != null && day == session.Day ? Guide.RecommendedTournament(c.Id)?.Tournament.Id : null;
 
             // いま何をすればいいか
-            var banner = UiKit.CardBox("Banner", _list, new Color(0.12f, 0.3f, 0.2f, 0.96f), 18);
+            var banner = UiKit.CardBox("Banner", _list, UiKit.CardHighlight, 18);
             if (day == session.Day)
             {
-                UiKit.Label(banner, "<size=36><b>今日はレースの日！</b></size>\n出たい大会の「出走登録へ」を押しましょう。<color=#ffd84a>★おすすめ</color> は今の実力で挑みやすい大会です。", 28);
+                UiKit.Label(banner, "<size=36><b>今日はレースの日！</b></size>\n出たい大会の「出走登録へ」を押しましょう。<color=#e0761a>★おすすめ</color> は今の実力で挑みやすい大会です。", 28);
             }
             else
             {
@@ -53,7 +53,7 @@ namespace NagaRace.Presentation.Main
             {
                 bool today = day == session.Day;
                 var date = new GameDate(day, b.Calendar);
-                UiKit.Label(_list, today ? $"<b>今日（{date.Label}）</b>" : $"<b>{date.Label}</b>（{day - session.Day}日後）", 32, today ? new Color(1f, 0.85f, 0.3f) : UiKit.TextColor);
+                UiKit.Label(_list, today ? $"<b>今日（{date.Label}）</b>" : $"<b>{date.Label}</b>（{day - session.Day}日後）", 32, today ? new Color32(0xE0, 0x76, 0x1A, 0xFF) : UiKit.TextColor);
                 foreach (var offering in Services.RaceDay.Offerings(session, day))
                 {
                     BuildCard(offering, today);
@@ -67,13 +67,13 @@ namespace NagaRace.Presentation.Main
         {
             var t = o.Tournament;
             var course = o.Course;
-            var card = UiKit.CardBox($"Tournament {t.Id}", _list, o.Eligible ? UiKit.Card : new Color(0.12f, 0.14f, 0.16f, 0.9f));
+            var card = UiKit.CardBox($"Tournament {t.Id}", _list, o.Eligible ? UiKit.Card : new Color(0.92f, 0.93f, 0.93f, 0.95f));
             int danger = course.Segments.Max(s => s.Danger);
             bool recommended = today && t.Id == _recommendedId;
             UiKit.Label(card,
-                $"<size=32><b>{t.Name}</b></size>　[{t.GradeLabel}]{(recommended ? "　<color=#ffd84a><b>★おすすめ</b></color>" : string.Empty)}\n" +
+                $"<size=32><b>{t.Name}</b></size>　[{t.GradeLabel}]{(recommended ? "　<color=#e0761a><b>★おすすめ</b></color>" : string.Empty)}\n" +
                 $"{course.Name}　{course.Distance:0}m　危険度 {new string('▲', danger)}" +
-                (o.Eligible ? string.Empty : $"\n<color=#a0a0a0>出走できません: {o.Reason}</color>"), 26);
+                (o.Eligible ? string.Empty : $"\n<color=#8a9891>出走できません: {o.Reason}</color>"), 26);
             if (today && o.Eligible)
             {
                 var buttons = UiKit.HStack("Buttons", card, 16, 64);
@@ -166,14 +166,14 @@ namespace NagaRace.Presentation.Main
             info.AppendLine();
             info.AppendLine($"<size=36>危険度 <b>{TrainingScreen.RiskLabel(risk.Level)}</b></size>");
             info.AppendLine(risk.Reasons.Count > 0 ? string.Join(" / ", risk.Reasons) : "特に問題なし");
-            if (risk.LostPossible) info.AppendLine("<color=#ff7050>このレースではロストの可能性があります</color>");
+            if (risk.LostPossible) info.AppendLine("<color=#d9442b>このレースではロストの可能性があります</color>");
             _info.text = info.ToString();
 
             var list = new StringBuilder("<b>出走表</b>\n");
             for (int i = 0; i < request.Entrants.Count; i++)
             {
                 var e = request.Entrants[i];
-                string name = e.IsPlayer ? $"<color=#ffd84a><b>{e.Name}</b></color>" : e.Name;
+                string name = e.IsPlayer ? $"<color=#e0761a><b>{e.Name}</b></color>" : e.Name;
                 list.AppendLine($"{i + 1}枠  {name}（{HomeScreen.SpeciesName(e.SpeciesId)}）流速 {UiKit.Rank(e.Stats.FlowSpeed, b)}");
             }
 
@@ -253,7 +253,7 @@ namespace NagaRace.Presentation.Main
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.55f);
             card.sizeDelta = new Vector2(1100, 0);
             _text = UiKit.Label(card, string.Empty, 32, UiKit.TextColor, TextAnchor.UpperCenter);
-            _next = UiKit.Label(card, string.Empty, 28, new Color(1f, 0.85f, 0.3f), TextAnchor.UpperCenter);
+            _next = UiKit.Label(card, string.Empty, 28, new Color32(0xE0, 0x76, 0x1A, 0xFF), TextAnchor.UpperCenter);
 
             var button = UiKit.Button(root, "ホームへ", () => Ui.ShowRoot<HomeScreen>(), UiKit.Accent, 360, 90, 36);
             var rect = (RectTransform)button.transform;
@@ -275,15 +275,15 @@ namespace NagaRace.Presentation.Main
             var a = o.Aftermath;
             var text = new StringBuilder();
             text.AppendLine($"<size=40><b>{o.Tournament.Name}</b></size>");
-            if (o.Lost) text.AppendLine("<size=60><color=#a0c0ff><b>LOST</b></color></size>");
+            if (o.Lost) text.AppendLine("<size=60><color=#3f72c4><b>LOST</b></color></size>");
             else if (o.Placing.Retired) text.AppendLine("<size=60><b>リタイア</b></size>");
             else text.AppendLine($"<size=80><b>{o.Placing.Rank}</b></size><size=40>着</size>　{o.Placing.FormatTime()}");
-            if (o.Won) text.AppendLine("<color=#ffd84a><b>優勝！</b></color>");
-            if (o.Promoted) text.AppendLine("<color=#ffd84a>上の大会に出られるようになった！</color>");
+            if (o.Won) text.AppendLine("<color=#e0761a><b>優勝！</b></color>");
+            if (o.Promoted) text.AppendLine("<color=#e0761a>上の大会に出られるようになった！</color>");
             text.AppendLine();
-            text.AppendLine($"耐久 {a.DurabilityBefore} → {a.DurabilityAfter}" + (a.Injured ? $"　<color=#ff8060>大怪我（最大耐久 {a.MaxDurabilityBefore} → {a.MaxDurabilityAfter}）</color>" : string.Empty));
+            text.AppendLine($"耐久 {a.DurabilityBefore} → {a.DurabilityAfter}" + (a.Injured ? $"　<color=#d9442b>大怪我（最大耐久 {a.MaxDurabilityBefore} → {a.MaxDurabilityAfter}）</color>" : string.Empty));
             text.AppendLine($"疲労 {a.FatigueBefore} → {a.FatigueAfter}");
-            if (a.FurnaceDurabilityLoss > 0) text.AppendLine($"<color=#ffb060>炉耐久 -{a.FurnaceDurabilityLoss}</color>");
+            if (a.FurnaceDurabilityLoss > 0) text.AppendLine($"<color=#e07a1f>炉耐久 -{a.FurnaceDurabilityLoss}</color>");
             if (o.Placing.MaxFurnaceSeconds > 0) text.AppendLine($"葉脈炉 最長 {o.Placing.MaxFurnaceSeconds:0.0}秒");
             if (o.ParentTree != null) text.AppendLine($"\n「{o.ParentTree.Name}」が親木園に加わった");
             _text.text = text.ToString();

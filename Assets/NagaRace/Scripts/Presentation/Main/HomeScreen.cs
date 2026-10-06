@@ -58,7 +58,7 @@ namespace NagaRace.Presentation.Main
                             ui.Get<EntryScreen>().SetTournament(recommended.Tournament.Id);
                             ui.Show<EntryScreen>();
                         },
-                        Color = new Color(0.95f, 0.6f, 0.15f),
+                        Color = UiKit.Warning,
                     };
                 }
             }
@@ -72,7 +72,6 @@ namespace NagaRace.Presentation.Main
                     Description = "疲れていると育成の伸びが落ち、ケガもしやすくなります。今日は休ませましょう。",
                     ButtonLabel = "休養する（1日進む）",
                     Run = () => ui.Get<HomeScreen>().Rest(),
-                    Color = new Color(0.3f, 0.6f, 0.85f),
                 };
             }
 
@@ -84,7 +83,6 @@ namespace NagaRace.Presentation.Main
                     Description = "耐久が低いままレースに出ると、事故やロストの危険が上がります。休養で回復しましょう。",
                     ButtonLabel = "休養する（1日進む）",
                     Run = () => ui.Get<HomeScreen>().Rest(),
-                    Color = new Color(0.3f, 0.6f, 0.85f),
                 };
             }
 
@@ -97,7 +95,7 @@ namespace NagaRace.Presentation.Main
                     Description = "これから少しずつ能力が下がります。引退させて親木にすると、次の世代へつなげられます。",
                     ButtonLabel = "引退について見る",
                     Run = () => ui.Show<CharacterDetailScreen>(),
-                    Color = new Color(0.9f, 0.55f, 0.25f),
+                    Color = UiKit.Accent,
                 };
             }
 
@@ -130,6 +128,10 @@ namespace NagaRace.Presentation.Main
     {
         private RectTransform _leafTabs;
         private Text _character;
+        private Text _characterDetail;
+        private Text _date;
+        private Image _statusCard;
+        private Image _statusIcon;
         private RectTransform _week;
         private Text _actionTitle;
         private Text _actionDescription;
@@ -144,6 +146,8 @@ namespace NagaRace.Presentation.Main
 
         public override string Title => "ホーム";
         public override bool ShowBack => false;
+        public override bool ShowHeader => false;
+        public override bool ShowBackground => false;
 
         /// <summary>現在の「今日やること」（テスト用）。</summary>
         public GuidedAction CurrentAction => _action;
@@ -156,11 +160,17 @@ namespace NagaRace.Presentation.Main
             left.anchorMax = new Vector2(0, 1);
             left.pivot = new Vector2(0, 1);
             left.sizeDelta = new Vector2(760, 0);
-            UiKit.Label(left, "育てる葉っぱ（タップで切り替え）", 24, UiKit.SubText);
-            _leafTabs = UiKit.HStack("LeafTabs", left, 10, 70);
+            var dateCard = UiKit.CardBox("Date", left, UiKit.Card, 14);
+            _date = UiKit.Label(dateCard, string.Empty, 28);
+            UiKit.Label(left, "<b>育てる葉っぱ</b>（タップで切り替え）", 24, UiKit.TextColor);
+            _leafTabs = UiKit.HStack("LeafTabs", left, 10, 76);
             var status = UiKit.CardBox("Status", left);
-            _character = UiKit.Label(status, string.Empty, 29);
-            var summaryCard = UiKit.CardBox("Summary", left, new Color(0.08f, 0.15f, 0.18f, 0.92f), 14);
+            _statusCard = status.GetComponent<Image>();
+            var statusHead = UiKit.HStack("Head", status, 18, 120);
+            _statusIcon = UiKit.LeafIcon(statusHead, null, 118);
+            _character = UiKit.Label(statusHead, string.Empty, 29, UiKit.TextColor, TextAnchor.MiddleLeft);
+            _characterDetail = UiKit.Label(status, string.Empty, 28);
+            var summaryCard = UiKit.CardBox("Summary", left, UiKit.Card, 14);
             _summary = UiKit.Label(summaryCard, string.Empty, 24, UiKit.SubText);
 
             // 右: 今週の流れ・今日やること・その他
@@ -170,11 +180,12 @@ namespace NagaRace.Presentation.Main
             right.pivot = new Vector2(1, 1);
             right.sizeDelta = new Vector2(820, 0);
 
-            UiKit.Label(right, "今週の流れ", 24, UiKit.SubText);
+            UiKit.Label(right, "<b>今週の流れ</b>", 24, UiKit.TextColor);
             _week = UiKit.HStack("Week", right, 8, 84);
             _week.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
 
-            _actionCard = UiKit.Panel("TodayAction", right, new Color(0.12f, 0.3f, 0.2f, 0.96f));
+            _actionCard = UiKit.Panel("TodayAction", right, UiKit.Card);
+            UiKit.AddShadow(_actionCard.gameObject, 6f, 0.16f);
             var actionLayout = _actionCard.gameObject.AddComponent<VerticalLayoutGroup>();
             actionLayout.padding = new RectOffset(26, 26, 22, 22);
             actionLayout.spacing = 12;
@@ -182,23 +193,17 @@ namespace NagaRace.Presentation.Main
             actionLayout.childControlHeight = true;
             actionLayout.childForceExpandHeight = false;
             _actionCard.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            UiKit.Label(_actionCard.transform, "<b>今日やること</b>", 26, new Color(1f, 0.85f, 0.3f));
+            UiKit.Label(_actionCard.transform, "<b>★ 今日やること</b>", 28, new Color32(0xE0, 0x76, 0x1A, 0xFF));
             _actionTitle = UiKit.Label(_actionCard.transform, string.Empty, 40);
             _actionDescription = UiKit.Label(_actionCard.transform, string.Empty, 26, UiKit.SubText);
             _actionButton = UiKit.Button(_actionCard.transform, "育成する", () => _action?.Run(), UiKit.Accent, 760, 104, 42);
 
-            UiKit.Label(right, "ほかにできること", 24, UiKit.SubText);
+            UiKit.Label(right, "<b>ほかにできること</b>", 24, UiKit.TextColor);
             var row1 = UiKit.HStack("Row1", right, 12, 76);
             row1.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
-            UiKit.Button(row1, "育成", () => Ui.Show<TrainingScreen>(), UiKit.Card, 190, 76, 30);
-            UiKit.Button(row1, "休養", Rest, UiKit.Card, 190, 76, 30);
-            UiKit.Button(row1, "大会", () => Ui.Show<CalendarScreen>(), UiKit.Card, 190, 76, 30);
-            UiKit.Button(row1, "詳しく見る", () => Ui.Show<CharacterDetailScreen>(), UiKit.Card, 190, 76, 28);
-            var row2 = UiKit.HStack("Row2", right, 12, 70);
-            row2.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
-            UiKit.Button(row2, "葉っぱ一覧・アルバム", () => Ui.Show<CharactersScreen>(), UiKit.Muted, 260, 70, 26);
-            UiKit.Button(row2, "親木園（接ぎ木）", () => Ui.Show<ParentTreeScreen>(), UiKit.Muted, 260, 70, 26);
-            UiKit.Button(row2, "設定", () => Ui.Show<SettingsScreen>(), UiKit.Muted, 160, 70, 26);
+            UiKit.Button(row1, "休養", Rest, UiKit.Muted, 190, 76, 30);
+            UiKit.Button(row1, "詳しく見る", () => Ui.Show<CharacterDetailScreen>(), UiKit.Muted, 190, 76, 28);
+            UiKit.Button(row1, "設定", () => Ui.Show<SettingsScreen>(), UiKit.Muted, 160, 76, 28);
         }
 
         public override void OnShow()
@@ -207,17 +212,25 @@ namespace NagaRace.Presentation.Main
             BuildWeek();
             var c = Ui.SelectedCharacter;
             var b = Services.Balance;
+            _date.text = MainUi.DateLine(Services);
             if (c == null)
             {
                 _character.text = "<b>現役の葉っぱがいません</b>";
+                _characterDetail.text = string.Empty;
+                _statusCard.color = UiKit.Card;
+                _statusIcon.color = UiKit.Line;
             }
             else
             {
                 var phase = c.PhaseOn(Services.Session.Day);
                 int left = c.Growth.DaysLeftInPhase(c.AgeDays(Services.Session.Day));
+                // キャラごとに UI の色を変える（愛着のため）
+                _statusCard.color = UiKit.SpeciesTint(c.SpeciesId, 0.16f);
+                _statusIcon.color = UiKit.SpeciesColor(c.SpeciesId);
                 _character.text =
-                    $"<size=50><b>{c.Name}</b></size>　{SpeciesName(c.SpeciesId)} / {c.Generation}世代\n" +
-                    $"{GrowthProfile.Label(phase)}期{(left > 0 ? $"（あと{left}日）" : string.Empty)}　調子 <b>{ConditionLabel(c.Condition)}</b>\n" +
+                    $"<size=54><b>{c.Name}</b></size>\n{SpeciesName(c.SpeciesId)} / {c.Generation}世代　{GrowthProfile.Label(phase)}期{(left > 0 ? $"（あと{left}日）" : string.Empty)}";
+                _characterDetail.text =
+                    $"調子 <b>{ConditionLabel(c.Condition)}</b>\n" +
                     $"疲労 {Bar(c.Fatigue, 100, true)} {c.Fatigue}\n" +
                     $"耐久 {Bar(c.Durability, c.MaxDurability, false)} {c.Durability}/{c.MaxDurability}\n" +
                     $"流速 <b>{UiKit.Rank(c.Stats.FlowSpeed, b)}</b>  加速 <b>{UiKit.Rank(c.Stats.Acceleration, b)}</b>  浮力 <b>{UiKit.Rank(c.Stats.Buoyancy, b)}</b>\n" +
@@ -232,7 +245,7 @@ namespace NagaRace.Presentation.Main
             _actionTitle.text = $"<b>{_action.Title}</b>";
             _actionDescription.text = _action.Description;
             UiKit.SetButtonLabel(_actionButton, _action.ButtonLabel);
-            _actionButton.GetComponent<Image>().color = _action.Color;
+            UiKit.SetButtonColor(_actionButton, _action.Color);
             Tutorial.ShowOnce(Ui, "home");
         }
 
@@ -257,12 +270,18 @@ namespace NagaRace.Presentation.Main
             {
                 var target = c;
                 bool isSelected = c == selected;
-                UiKit.Button(_leafTabs, isSelected ? $"▶ {c.Name}" : c.Name, () =>
+                var tab = UiKit.Button(_leafTabs, c.Name, () =>
                 {
                     Services.Settings.SelectedCharacterId = target.Id;
                     Services.SaveNow();
                     OnShow();
-                }, isSelected ? UiKit.CardHighlight : UiKit.Card, 230, 66, 28);
+                }, isSelected ? UiKit.SpeciesColor(c.SpeciesId) : UiKit.Muted, 230, 72, 28);
+                var icon = UiKit.LeafIcon(tab.transform, c.SpeciesId, 46);
+                icon.GetComponent<LayoutElement>().ignoreLayout = true;
+                icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0, 0.5f);
+                icon.rectTransform.anchoredPosition = new Vector2(34, 0);
+                if (isSelected) icon.color = Color.white;
+                tab.GetComponentInChildren<Text>().rectTransform.offsetMin = new Vector2(56, 4);
             }
         }
 
@@ -276,12 +295,13 @@ namespace NagaRace.Presentation.Main
             {
                 bool today = d == date.DayOfWeek;
                 bool race = d == raceDay;
-                Color color = today ? new Color(1f, 0.85f, 0.3f, 0.95f) : (d < date.DayOfWeek ? new Color(0.2f, 0.25f, 0.27f, 0.9f) : UiKit.Card);
+                Color color = today ? UiKit.Accent : (d < date.DayOfWeek ? new Color(0.88f, 0.9f, 0.89f, 0.95f) : UiKit.Card);
                 var cell = UiKit.Panel($"Day{d}", _week, color);
+                UiKit.AddShadow(cell.gameObject, 3f, 0.1f);
                 cell.gameObject.AddComponent<LayoutElement>().preferredWidth = 180;
-                string label = $"{d}日目{(race ? "\n<b>レース</b>" : "\n育成・休養")}";
-                if (today) label = $"<b>今日</b>\n{(race ? "レース" : "育成・休養")}";
-                var text = UiKit.Text("Label", cell.transform, label, 24, TextAnchor.MiddleCenter, today ? new Color(0.15f, 0.1f, 0f) : UiKit.TextColor);
+                string label = $"{d}日目{(race ? "\n<color=#e0761a><b>レース</b></color>" : "\n育成・休養")}";
+                if (today) label = $"<b>今日</b>\n{(race ? "<b>レース！</b>" : "育成・休養")}";
+                var text = UiKit.Text("Label", cell.transform, label, 24, TextAnchor.MiddleCenter, today ? Color.white : UiKit.TextColor);
                 UiKit.Stretch(text.rectTransform, 4, 4, 4, 4);
             }
         }
@@ -291,9 +311,9 @@ namespace NagaRace.Presentation.Main
             int filled = Mathf.Clamp(Mathf.RoundToInt(10f * value / Mathf.Max(1, max)), 0, 10);
             float ratio = (float)value / Mathf.Max(1, max);
             string color = higherIsWorse
-                ? (ratio >= 0.6f ? "#ff7050" : ratio >= 0.4f ? "#ffd84a" : "#7fe08a")
-                : (ratio < 0.2f ? "#ff5040" : ratio < 0.4f ? "#ffb040" : "#7fe08a");
-            return $"<color={color}>{new string('■', filled)}</color><color=#55606a>{new string('■', 10 - filled)}</color>";
+                ? (ratio >= 0.6f ? "#d9442b" : ratio >= 0.4f ? "#e0761a" : "#2f9e4f")
+                : (ratio < 0.2f ? "#d9442b" : ratio < 0.4f ? "#e07a1f" : "#2f9e4f");
+            return $"<color={color}>{new string('■', filled)}</color><color=#d5ddd9>{new string('■', 10 - filled)}</color>";
         }
 
         public static string SpeciesName(string id)

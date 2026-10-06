@@ -32,9 +32,12 @@ namespace NagaRace.Presentation.Main
             foreach (var c in session.Roster.Active)
             {
                 bool selected = Ui.SelectedCharacter == c;
-                var card = UiKit.CardBox($"Card {c.Id}", _list, selected ? UiKit.CardHighlight : UiKit.Card);
+                var card = UiKit.CardBox($"Card {c.Id}", _list, selected ? UiKit.SpeciesTint(c.SpeciesId, 0.22f) : UiKit.Card);
+                var head = UiKit.HStack("Head", card, 16, 70);
+                UiKit.LeafIcon(head, c.SpeciesId, 66);
+                UiKit.Label(head, $"<size=36><b>{c.Name}</b></size>", 30, UiKit.TextColor, TextAnchor.MiddleLeft);
                 UiKit.Label(card,
-                    $"<b>{c.Name}</b>{(selected ? "　<color=#ffd84a>（選択中）</color>" : string.Empty)}　{HomeScreen.SpeciesName(c.SpeciesId)} / {c.Generation}世代 / {GrowthProfile.Label(c.PhaseOn(session.Day))}期\n" +
+                    $"{(selected ? "<color=#e0761a><b>選択中</b></color>　" : string.Empty)}{HomeScreen.SpeciesName(c.SpeciesId)} / {c.Generation}世代 / {GrowthProfile.Label(c.PhaseOn(session.Day))}期\n" +
                     $"調子 {HomeScreen.ConditionLabel(c.Condition)}　疲労 {c.Fatigue}　耐久 {c.Durability}/{c.MaxDurability}　戦績 {c.Record.Starts}戦{c.Record.Wins}勝　流速 {UiKit.Rank(c.Stats.FlowSpeed, b)} 加速 {UiKit.Rank(c.Stats.Acceleration, b)}", 26);
                 var buttons = UiKit.HStack("Buttons", card, 16, 64);
                 var target = c;
@@ -46,9 +49,9 @@ namespace NagaRace.Presentation.Main
             UiKit.Label(_list, $"<b>思い出アルバム</b>（{session.Roster.Album.Count}枚）", 34);
             foreach (var entry in session.Roster.Album.Reverse())
             {
-                string status = entry.Status == CharacterStatus.Lost ? "<color=#a0c0ff>ロスト</color>" : "引退";
-                var card = UiKit.CardBox($"Album {entry.Id}", _list, new Color(0.1f, 0.14f, 0.2f, 0.9f));
-                UiKit.Label(card, $"<b>{entry.Name}</b>　{status}　{entry.Record.Starts}戦{entry.Record.Wins}勝（{entry.BornDay}日目〜{entry.EndedDay}日目）\n<color=#bcd>{entry.Comment}</color>", 24);
+                string status = entry.Status == CharacterStatus.Lost ? "<color=#3f72c4>ロスト</color>" : "引退";
+                var card = UiKit.CardBox($"Album {entry.Id}", _list, new Color(0.94f, 0.95f, 0.97f, 0.97f));
+                UiKit.Label(card, $"<b>{entry.Name}</b>　{status}　{entry.Record.Starts}戦{entry.Record.Wins}勝（{entry.BornDay}日目〜{entry.EndedDay}日目）\n<color=#8a9891>{entry.Comment}</color>", 24);
             }
         }
 
@@ -71,6 +74,8 @@ namespace NagaRace.Presentation.Main
     public sealed class CharacterDetailScreen : UiScreen
     {
         private UnityEngine.UI.Text _left;
+        private UnityEngine.UI.Image _leftCard;
+        private UnityEngine.UI.Image _icon;
         private UnityEngine.UI.Text _right;
 
         public CharacterDetailScreen(MainUi ui) : base(ui)
@@ -82,6 +87,8 @@ namespace NagaRace.Presentation.Main
         protected override void OnBuild(RectTransform root)
         {
             var left = UiKit.CardBox("Left", root);
+            _leftCard = left.GetComponent<UnityEngine.UI.Image>();
+            _icon = UiKit.LeafIcon(left, null, 120);
             left.anchorMin = new Vector2(0, 1);
             left.anchorMax = new Vector2(0.5f, 1);
             left.pivot = new Vector2(0, 1);
@@ -116,6 +123,8 @@ namespace NagaRace.Presentation.Main
             }
 
             var b = Services.Balance;
+            _leftCard.color = UiKit.SpeciesTint(c.SpeciesId, 0.16f);
+            _icon.color = UiKit.SpeciesColor(c.SpeciesId);
             var lineage = Services.Lineage.Load();
             var training = Services.Trainings.Load();
             int day = Services.Session.Day;
@@ -143,7 +152,7 @@ namespace NagaRace.Presentation.Main
             right.AppendLine($"<b>性格</b>  {PersonalityLabel(c.Personality)}");
             right.AppendLine("<b>体質</b>  " + (c.BodyTraits.Count > 0 ? string.Join("・", c.BodyTraits.Select(id => training.FindBodyTrait(id)?.Name ?? id)) : "まだわからない"));
             right.AppendLine("<b>因子</b>  " + (c.Factors.Count > 0 ? string.Join("・", c.Factors.Select(f => $"{lineage.Factor(f.FactorId)?.Name ?? f.FactorId} Lv{f.Level}")) : "なし"));
-            if (c.MutationId != null) right.AppendLine($"<b>特異葉</b>  <color=#ffd84a>{lineage.Mutation(c.MutationId)?.Name ?? c.MutationId}</color>");
+            if (c.MutationId != null) right.AppendLine($"<b>特異葉</b>  <color=#e0761a>{lineage.Mutation(c.MutationId)?.Name ?? c.MutationId}</color>");
             right.AppendLine();
             right.AppendLine("<b>戦績</b>");
             right.AppendLine($"  {c.Record.Starts}戦 {c.Record.Wins}勝 3着内{c.Record.Top3}回 リタイア{c.Record.Retirements}回");

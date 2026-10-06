@@ -25,6 +25,10 @@ namespace NagaRace.Presentation.Race
             var image = rect.gameObject.AddComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
+            // 角丸（ホーム側の UI と同じ見た目にそろえる）
+            image.sprite = NagaRace.Presentation.App.UiSprites.Rounded;
+            image.type = Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = size.y < 30f ? 6f : 2.4f;
             return image;
         }
 
@@ -40,9 +44,14 @@ namespace NagaRace.Presentation.Race
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.supportRichText = true;
-            var outline = rect.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.6f);
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
+            // 3D の上に出す明るい文字だけ縁取りする（白いパネル上の濃い文字には付けない）
+            if (color.r + color.g + color.b > 2.0f)
+            {
+                var outline = rect.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0f, 0.1f, 0.05f, 0.65f);
+                outline.effectDistance = new Vector2(1.5f, -1.5f);
+            }
+
             return text;
         }
 

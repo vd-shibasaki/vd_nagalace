@@ -64,14 +64,9 @@ namespace NagaRace.Presentation.Main
     /// </summary>
     public sealed class HomeStage : MonoBehaviour
     {
-        private static readonly Color[] Colors =
-        {
-            new Color(0.92f, 0.28f, 0.20f), new Color(0.96f, 0.80f, 0.22f), new Color(0.40f, 0.78f, 0.36f),
-            new Color(0.96f, 0.62f, 0.78f), new Color(0.62f, 0.42f, 0.22f), new Color(0.48f, 0.32f, 0.62f),
-        };
-
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private readonly List<RacerView> _leaves = new List<RacerView>();
+        private readonly List<(float angle, float speed, float radius)> _paths = new List<(float, float, float)>();
         private Material _racer;
         private Material _marker;
         private string _signature;
@@ -110,19 +105,40 @@ namespace NagaRace.Presentation.Main
 
             // 手持ちが変わったときだけ作り直す
             string signature = string.Join(",", System.Linq.Enumerable.Select(services.Session.Roster.Active, c => c.Id));
-            if (signature == _signature) return;
+            if (signature == _signature)
+            {
+                Wander();
+                return;
+            }
             _signature = signature;
             foreach (var leaf in _leaves) Destroy(leaf.gameObject);
             _leaves.Clear();
+            _paths.Clear();
 
             var active = services.Session.Roster.Active;
             for (int i = 0; i < active.Count; i++)
             {
                 float angle = i * Mathf.PI * 2f / Mathf.Max(1, active.Count);
-                var view = RacerView.Create(active[i].Name, Colors[i % Colors.Length], false, _racer, _marker, i);
+                var view = RacerView.Create(active[i].Name, NagaRace.Presentation.App.UiKit.SpeciesColor(active[i].SpeciesId), false, _racer, _marker, i);
                 view.transform.SetParent(transform, false);
                 view.SetPose(new Vector3(4 + Mathf.Cos(angle) * 4f, 0.1f, 4 + Mathf.Sin(angle) * 2.5f), new Vector3(-Mathf.Sin(angle), 0, Mathf.Cos(angle)));
                 _leaves.Add(view);
+                // 一枚ずつ違う速さ・半径で池をのんびり回る
+                _paths.Add((angle, 0.12f + 0.05f * (i % 3), 0.7f + 0.15f * (i % 2)));
+            }
+        }
+
+        /// <summary>葉っぱたちが池でのんびり過ごす（03 §2: 眠る・水に浮く・他キャラと話す などの代わり）。</summary>
+        private void Wander()
+        {
+            for (int i = 0; i < _leaves.Count; i++)
+            {
+                var (angle, speed, radius) = _paths[i];
+                angle += speed * Time.deltaTime * (i % 2 == 0 ? 1f : -1f);
+                _paths[i] = (angle, speed, radius);
+                var position = new Vector3(4 + Mathf.Cos(angle) * 4.5f * radius, 0.1f, 4 + Mathf.Sin(angle) * 2.8f * radius);
+                var forward = new Vector3(-Mathf.Sin(angle), 0, Mathf.Cos(angle)) * (i % 2 == 0 ? 1f : -1f);
+                _leaves[i].SetPose(position, forward);
             }
         }
 

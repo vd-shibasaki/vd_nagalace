@@ -12,13 +12,14 @@ namespace NagaRace.Presentation.Race
     /// </summary>
     public sealed class FurnaceHud : MonoBehaviour
     {
-        private static readonly Color GaugeColor = new Color(0.45f, 0.9f, 0.45f);
-        private static readonly Color ReadyColor = new Color(0.25f, 0.85f, 0.4f);
-        private static readonly Color DisabledColor = new Color(0.35f, 0.4f, 0.42f);
+        private static readonly Color GaugeColor = new Color(0.3f, 0.75f, 0.4f);
+        private static readonly Color ReadyColor = new Color(0.25f, 0.68f, 0.35f);
+        private static readonly Color DisabledColor = new Color(0.62f, 0.67f, 0.65f);
+        private static readonly Color Dark = new Color(0.18f, 0.24f, 0.21f);
         private static readonly Color IgnitionColor = new Color(1f, 0.85f, 0.25f);
         private static readonly Color SafeColor = new Color(1f, 0.6f, 0.15f);
         private static readonly Color RiskColor = new Color(0.95f, 0.15f, 0.12f);
-        private static readonly Color CooldownColor = new Color(0.35f, 0.55f, 0.75f);
+        private static readonly Color CooldownColor = new Color(0.45f, 0.6f, 0.55f);
         private static readonly Color BrokenColor = new Color(0.35f, 0.12f, 0.1f);
 
         private Image _durabilityFill;
@@ -48,16 +49,17 @@ namespace NagaRace.Presentation.Race
 
             // 葉力ゲージ
             _gaugeWidth = 520f;
-            var gaugeBack = UiFactory.Panel("LeafGauge", safeRoot, bottom, bottom, new Vector2(-150f, 40f), new Vector2(_gaugeWidth, 30f), new Color(0f, 0f, 0f, 0.55f));
+            var gaugeBack = UiFactory.Panel("LeafGauge", safeRoot, bottom, bottom, new Vector2(-150f, 40f), new Vector2(_gaugeWidth, 30f), new Color(1f, 1f, 1f, 0.9f));
+            gaugeBack.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.25f);
             _gaugeFill = UiFactory.Panel("Fill", gaugeBack.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(0f, 30f), GaugeColor);
             // 始動ライン（葉力50）
-            UiFactory.Panel("Threshold", gaugeBack.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(4f, 40f), Color.white);
-            _gaugeText = UiFactory.Label("LeafLabel", gaugeBack.transform, font, 24, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 4f), new Vector2(300f, 32f), Color.white);
+            UiFactory.Panel("Threshold", gaugeBack.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(4f, 40f), new Color(0.88f, 0.46f, 0.1f));
+            _gaugeText = UiFactory.Label("LeafLabel", gaugeBack.transform, font, 26, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 4f), new Vector2(300f, 34f), Color.white);
 
             // 耐久（03 §7 下部）
-            var durabilityBack = UiFactory.Panel("Durability", safeRoot, bottom, bottom, new Vector2(-150f, 8f), new Vector2(_gaugeWidth, 14f), new Color(0f, 0f, 0f, 0.55f));
+            var durabilityBack = UiFactory.Panel("Durability", safeRoot, bottom, bottom, new Vector2(-150f, 8f), new Vector2(_gaugeWidth, 14f), new Color(1f, 1f, 1f, 0.9f));
             _durabilityFill = UiFactory.Panel("Fill", durabilityBack.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(_gaugeWidth, 14f), new Color(0.95f, 0.4f, 0.4f));
-            _durabilityText = UiFactory.Label("DurabilityLabel", durabilityBack.transform, font, 18, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(200f, 20f), Color.white);
+            _durabilityText = UiFactory.Label("DurabilityLabel", durabilityBack.transform, font, 18, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(200f, 20f), Dark);
 
             // 葉脈炉ボタン（タップ / クリック）
             _buttonImage = UiFactory.Panel("FurnaceButton", safeRoot, bottom, bottom, new Vector2(240f, 24f), new Vector2(240f, 110f), DisabledColor);
@@ -74,16 +76,21 @@ namespace NagaRace.Presentation.Race
             _overflowText.text = "<b>OVER FLOW</b>";
 
             // 葉力チャンス（ゲージの上。受付時間の残りをバーで表示し、中央に目印）
-            _chanceRoot = UiFactory.Panel("Chance", safeRoot, bottom, bottom, new Vector2(-150f, 120f), new Vector2(_gaugeWidth, 70f), new Color(0.1f, 0.35f, 0.15f, 0.8f)).gameObject;
+            _chanceRoot = UiFactory.Panel("Chance", safeRoot, bottom, bottom, new Vector2(-150f, 120f), new Vector2(_gaugeWidth, 70f), new Color(1f, 1f, 1f, 0.95f)).gameObject;
+            _chanceRoot.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.3f);
+            var chanceOutline = _chanceRoot.AddComponent<Outline>();
+            chanceOutline.effectColor = ReadyColor;
+            chanceOutline.effectDistance = new Vector2(3f, -3f);
+            _chanceRoot.AddComponent<NagaRace.Presentation.App.TapTag>().Kind = NagaRace.Presentation.App.TapKind.Decide;
             var chanceImage = _chanceRoot.GetComponent<Image>();
             chanceImage.raycastTarget = true;
             _chanceButton = _chanceRoot.AddComponent<Button>();
             _chanceButton.transition = Selectable.Transition.None;
             _chanceButton.onClick.AddListener(() => ChargePressed?.Invoke());
-            UiFactory.Label("ChanceLabel", _chanceRoot.transform, font, 30, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(_gaugeWidth, 40f), Color.white).text = "<b>葉力チャンス！</b> タップ / F";
-            var barBack = UiFactory.Panel("Window", _chanceRoot.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(_gaugeWidth - 40f, 12f), new Color(0f, 0f, 0f, 0.5f));
-            _chanceFill = UiFactory.Panel("Remaining", barBack.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(_gaugeWidth - 40f, 12f), new Color(0.7f, 1f, 0.6f));
-            UiFactory.Panel("Center", barBack.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6f, 22f), new Color(1f, 0.9f, 0.3f));
+            UiFactory.Label("ChanceLabel", _chanceRoot.transform, font, 30, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(_gaugeWidth, 40f), ReadyColor).text = "<b>葉力チャンス！</b> タップ / F";
+            var barBack = UiFactory.Panel("Window", _chanceRoot.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(_gaugeWidth - 40f, 12f), new Color(0.88f, 0.91f, 0.89f));
+            _chanceFill = UiFactory.Panel("Remaining", barBack.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(_gaugeWidth - 40f, 12f), GaugeColor);
+            UiFactory.Panel("Center", barBack.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6f, 22f), new Color(0.88f, 0.46f, 0.1f));
             _chanceRoot.SetActive(false);
         }
 

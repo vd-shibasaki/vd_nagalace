@@ -19,8 +19,10 @@ namespace NagaRace.Presentation.Race
     /// </summary>
     public sealed class RaceHud : MonoBehaviour
     {
-        private static readonly Color PlayerHighlight = new Color(1f, 0.85f, 0.1f);
-        private static readonly Color PanelColor = new Color(0.05f, 0.12f, 0.18f, 0.62f);
+        private static readonly Color PlayerHighlight = new Color(0.88f, 0.46f, 0.1f);
+        private static readonly Color PanelColor = new Color(1f, 1f, 1f, 0.9f);
+        private static readonly Color Dark = new Color(0.18f, 0.24f, 0.21f);
+        private static readonly Color Green = new Color(0.25f, 0.68f, 0.35f);
 
         private Font _font;
         private RectTransform _safeRoot;
@@ -101,11 +103,13 @@ namespace NagaRace.Presentation.Race
             if (_speedButton == null)
             {
                 var anchor = new Vector2(1f, 1f);
-                var image = UiFactory.Panel("SpeedButton", _safeRoot, anchor, anchor, new Vector2(-24f, -350f), new Vector2(200f, 64f), new Color(0.13f, 0.22f, 0.26f, 0.9f));
+                var image = UiFactory.Panel("SpeedButton", _safeRoot, anchor, anchor, new Vector2(-24f, -350f), new Vector2(200f, 64f), Color.white);
+                image.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.25f);
+                image.gameObject.AddComponent<NagaRace.Presentation.App.TapTag>().Kind = NagaRace.Presentation.App.TapKind.Back;
                 image.raycastTarget = true;
                 _speedButton = image.gameObject.AddComponent<Button>();
                 _speedButton.onClick.AddListener(() => SpeedPressed?.Invoke());
-                _speedButtonText = UiFactory.Label("Label", image.transform, _font, 28, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(190f, 60f), Color.white);
+                _speedButtonText = UiFactory.Label("Label", image.transform, _font, 28, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(190f, 60f), Green);
 
                 var bottomLeft = new Vector2(0f, 0f);
                 _controls = UiFactory.Label("Controls", _safeRoot, _font, 24, TextAnchor.LowerLeft, bottomLeft, bottomLeft, new Vector2(24f, 20f), new Vector2(560f, 110f), new Color(1f, 1f, 1f, 0.9f));
@@ -125,7 +129,7 @@ namespace NagaRace.Presentation.Race
         public void ShowRisk(string label, string reasons, Color color, bool needsConfirm)
         {
             _riskPanel.SetActive(true);
-            _riskImage.color = new Color(color.r * 0.35f, color.g * 0.35f, color.b * 0.35f, 0.92f);
+            _riskImage.color = new Color(1f, 1f, 1f, 0.97f);
             _riskText.text = $"<size=30>出走前の危険度</size>\n<size=64><b><color=#{ColorUtility.ToHtmlStringRGB(color)}>{label}</color></b></size>\n{reasons}"
                 + (needsConfirm ? "\n\n<size=26>ロストの可能性があります。Space / クリックで出走</size>" : string.Empty);
         }
@@ -134,7 +138,7 @@ namespace NagaRace.Presentation.Race
         public void ShowInfo(string text)
         {
             _riskPanel.SetActive(true);
-            _riskImage.color = new Color(0.05f, 0.18f, 0.16f, 0.94f);
+            _riskImage.color = new Color(0.94f, 0.98f, 0.94f, 0.97f);
             _riskText.text = text + "\n\n<size=24>Space / クリックで次へ</size>";
         }
 
@@ -160,7 +164,8 @@ namespace NagaRace.Presentation.Race
         {
             var center = new Vector2(0.5f, 0.5f);
             _riskImage = UiFactory.Panel("RiskPanel", _safeRoot, center, center, new Vector2(0f, 60f), new Vector2(760f, 330f), new Color(0f, 0f, 0f, 0.9f));
-            _riskText = UiFactory.Label("RiskText", _riskImage.transform, _font, 32, TextAnchor.MiddleCenter, center, center, Vector2.zero, new Vector2(720f, 310f), Color.white);
+            _riskText = UiFactory.Label("RiskText", _riskImage.transform, _font, 32, TextAnchor.MiddleCenter, center, center, Vector2.zero, new Vector2(720f, 310f), Dark);
+            _riskImage.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.3f);
             _riskPanel = _riskImage.gameObject;
             _riskImage.raycastTarget = true;
             _riskPanel.AddComponent<Button>().onClick.AddListener(() => PanelClicked?.Invoke());
@@ -207,11 +212,11 @@ namespace NagaRace.Presentation.Race
                 if (!visible) continue;
 
                 var row = rows[i];
-                string statusColor = row.IsPlayer ? "#5a3a00" : "#cceeff";
+                string statusColor = row.IsPlayer ? "#fff3e0" : "#6d7d76";
                 _rowTexts[i].text = $"{i + 1}  {row.Name}  <color={statusColor}>{row.Status}</color>";
                 _rowSwatches[i].color = row.Color;
-                _rowBackgrounds[i].color = row.IsPlayer ? new Color(1f, 0.78f, 0.1f, 0.85f) : new Color(0f, 0f, 0f, 0.35f);
-                _rowTexts[i].color = row.IsPlayer ? new Color(0.15f, 0.1f, 0f) : Color.white;
+                _rowBackgrounds[i].color = row.IsPlayer ? new Color(0.94f, 0.54f, 0.14f, 0.95f) : new Color(1f, 1f, 1f, 0.82f);
+                _rowTexts[i].color = row.IsPlayer ? Color.white : Dark;
             }
         }
 
@@ -261,7 +266,9 @@ namespace NagaRace.Presentation.Race
 
             if (_resultButton == null)
             {
-                var image = UiFactory.Panel("ResultButton", _resultPanel.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(320f, 76f), new Color(0.36f, 0.72f, 0.42f));
+                var image = UiFactory.Panel("ResultButton", _resultPanel.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(320f, 76f), Green);
+                image.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.3f);
+                image.gameObject.AddComponent<NagaRace.Presentation.App.TapTag>().Kind = NagaRace.Presentation.App.TapKind.Decide;
                 image.raycastTarget = true;
                 _resultButton = image.gameObject.AddComponent<Button>();
                 _resultButtonText = UiFactory.Label("Label", image.transform, _font, 32, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(300f, 70f), Color.white);
@@ -293,17 +300,18 @@ namespace NagaRace.Presentation.Race
         {
             var anchor = new Vector2(0f, 1f);
             var panel = UiFactory.Panel("RankPanel", _safeRoot, anchor, anchor, new Vector2(24f, -24f), new Vector2(360f, 150f), PanelColor);
-            _rankText = UiFactory.Label("Rank", panel.transform, _font, 44, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -10f), new Vector2(200f, 100f), Color.white);
+            _rankText = UiFactory.Label("Rank", panel.transform, _font, 44, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -10f), new Vector2(200f, 100f), Green);
+            panel.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.2f);
             _nameText = UiFactory.Label("PlayerName", panel.transform, _font, 30, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(170f, -24f), new Vector2(180f, 40f), PlayerHighlight);
             _nameText.text = $"<b>{playerName}</b>";
-            _timeText = UiFactory.Label("Time", panel.transform, _font, 26, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(170f, -70f), new Vector2(180f, 36f), Color.white);
+            _timeText = UiFactory.Label("Time", panel.transform, _font, 26, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(170f, -70f), new Vector2(180f, 36f), Dark);
 
             for (int i = 0; i < racerCount; i++)
             {
                 float y = -186f - i * 40f;
-                var background = UiFactory.Panel($"Row{i}", _safeRoot, anchor, anchor, new Vector2(24f, y), new Vector2(360f, 36f), new Color(0f, 0f, 0f, 0.35f));
+                var background = UiFactory.Panel($"Row{i}", _safeRoot, anchor, anchor, new Vector2(24f, y), new Vector2(360f, 36f), new Color(1f, 1f, 1f, 0.82f));
                 var swatch = UiFactory.Panel("Swatch", background.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(10f, 26f), Color.white);
-                var text = UiFactory.Label("Text", background.transform, _font, 22, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(26f, 0f), new Vector2(330f, 36f), Color.white);
+                var text = UiFactory.Label("Text", background.transform, _font, 22, TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(26f, 0f), new Vector2(330f, 36f), Dark);
                 _rowBackgrounds.Add(background);
                 _rowSwatches.Add(swatch);
                 _rowTexts.Add(text);
@@ -346,8 +354,9 @@ namespace NagaRace.Presentation.Race
         private void BuildResultPanel()
         {
             var center = new Vector2(0.5f, 0.5f);
-            var panel = UiFactory.Panel("ResultPanel", _safeRoot, center, center, Vector2.zero, new Vector2(760f, 560f), new Color(0.03f, 0.08f, 0.12f, 0.88f));
-            _resultText = UiFactory.Label("ResultText", panel.transform, _font, 30, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(680f, 500f), Color.white);
+            var panel = UiFactory.Panel("ResultPanel", _safeRoot, center, center, Vector2.zero, new Vector2(760f, 600f), new Color(1f, 1f, 1f, 0.96f));
+            panel.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0.15f, 0.05f, 0.3f);
+            _resultText = UiFactory.Label("ResultText", panel.transform, _font, 30, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(680f, 500f), Dark);
             _resultPanel = panel.gameObject;
             _resultPanel.SetActive(false);
         }

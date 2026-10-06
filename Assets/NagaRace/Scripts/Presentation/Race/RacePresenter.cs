@@ -586,7 +586,7 @@ namespace NagaRace.Presentation.Race
             {
                 var entrant = _simulator.Racers[placing.EntrantIndex].Entrant;
                 string line = $"{placing.Rank}.  {entrant.Name}  {placing.FormatTime()}";
-                lines.Add(entrant.IsPlayer ? $"<color=#ffd84a><b>{line}</b></color>" : line);
+                lines.Add(entrant.IsPlayer ? $"<color=#e0761a><b>{line}</b></color>" : line);
             }
 
             if (_gameRace != null)

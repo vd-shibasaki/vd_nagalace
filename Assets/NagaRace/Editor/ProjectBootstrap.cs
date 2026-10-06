@@ -23,6 +23,10 @@ namespace NagaRace.EditorTools
         private const string TrainingsPath = "Assets/NagaRace/Data/Trainings/trainings.json";
         private const string FactorsPath = "Assets/NagaRace/Data/Factors/factors.json";
         private const string TournamentsPath = "Assets/NagaRace/Data/Tournaments/tournaments.json";
+        private const string FontPath = "Assets/NagaRace/Art/Fonts/MPLUSRounded1c-Medium.ttf";
+
+        /// <summary>UI フォント（丸ゴシック。なければ組み込みフォント）。</summary>
+        private static Font UiFont => AssetDatabase.LoadAssetAtPath<Font>(FontPath) ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         private const string CourseFolder = "Assets/NagaRace/Data/Courses";
         private const string MaterialFolder = "Assets/NagaRace/Art/Materials";
         private const string BalancePath = "Assets/NagaRace/Config/game_balance_defaults.json";
@@ -55,7 +59,7 @@ namespace NagaRace.EditorTools
             so.FindProperty("_assets._factors").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(FactorsPath);
             so.FindProperty("_assets._tournaments").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(TournamentsPath);
             AssignCourses(so.FindProperty("_assets._courses"));
-            so.FindProperty("_font").objectReferenceValue = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            so.FindProperty("_font").objectReferenceValue = UiFont;
             so.FindProperty("_groundMaterial").objectReferenceValue = LoadMaterial("Bank");
             so.FindProperty("_waterMaterial").objectReferenceValue = LoadMaterial("Water");
             so.FindProperty("_racerMaterial").objectReferenceValue = LoadMaterial("Racer");
@@ -102,7 +106,7 @@ namespace NagaRace.EditorTools
             so.FindProperty("_balanceJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(BalancePath);
             so.FindProperty("_speciesJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(SpeciesPath);
             so.FindProperty("_camera").objectReferenceValue = camera;
-            so.FindProperty("_font").objectReferenceValue = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            so.FindProperty("_font").objectReferenceValue = UiFont;
             so.FindProperty("_waterMaterial").objectReferenceValue = LoadMaterial("Water");
             so.FindProperty("_bankMaterial").objectReferenceValue = LoadMaterial("Bank");
             so.FindProperty("_lineMaterial").objectReferenceValue = LoadMaterial("Line");
