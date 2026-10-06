@@ -147,7 +147,11 @@ namespace NagaRace.Presentation.App
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = true;
             layout.childAlignment = TextAnchor.MiddleLeft;
-            rect.gameObject.AddComponent<LayoutElement>().preferredHeight = height;
+            var element = rect.gameObject.AddComponent<LayoutElement>();
+            element.preferredHeight = height;
+            element.minHeight = height;
+            // 縦並びの中で余った高さを受け取らない（タブやボタン列が引き伸ばされないように）
+            element.flexibleHeight = 0;
             return rect;
         }
 

@@ -168,6 +168,8 @@ namespace NagaRace.Presentation.Race
             _input.FurnacePressed += PressFurnace;
             _input.ChargePressed += PressCharge;
             _hud.PanelClicked += ConfirmPanel;
+            _hud.SpeedPressed += CycleSpeed;
+            if (_gameRace != null) _hud.ShowGameControls(_playbackSpeed);
         }
 
         private void ShowRiskPanel()
@@ -175,6 +177,17 @@ namespace NagaRace.Presentation.Race
             _waitingRiskConfirm = _risk.LostPossible;
             _riskBannerRemaining = _waitingRiskConfirm ? 0f : _riskBannerSeconds;
             _hud.ShowRisk(_risk.Label, _riskReasons, RiskColor(_risk.Level), _waitingRiskConfirm);
+        }
+
+        /// <summary>再生速度 x1 → x2 → x4。本番のレースでも見ているだけの時間を短くできる。</summary>
+        public void CycleSpeed()
+        {
+            _playbackSpeed = _playbackSpeed >= 4f ? 1f : _playbackSpeed * 2f;
+            if (_gameRace != null)
+            {
+                GameServices.Instance.Settings.PlaybackSpeed = _playbackSpeed;
+                _hud.ShowGameControls(_playbackSpeed);
+            }
         }
 
         /// <summary>説明・危険度の確認・ロスト画面のスキップ。</summary>

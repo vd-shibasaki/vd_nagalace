@@ -49,6 +49,7 @@ namespace NagaRace.Presentation.Main
         private Text _headerTitle;
         private Text _headerInfo;
         private Button _backButton;
+        private Button _homeButton;
         private GameObject _header;
         private GameObject _dialog;
         private Text _dialogText;
@@ -92,8 +93,15 @@ namespace NagaRace.Presentation.Main
             Current.Root.gameObject.SetActive(true);
             _header.SetActive(Services_Ready());
             _backButton.gameObject.SetActive(Current.ShowBack && _history.Count > 0);
+            UpdateHomeButton();
             Current.OnShow();
             RefreshHeader();
+        }
+
+        private void UpdateHomeButton()
+        {
+            bool show = Current != null && !(Current is HomeScreen) && !(Current is TitleScreen) && GameServices.Instance?.Session != null;
+            _homeButton.gameObject.SetActive(show);
         }
 
         /// <summary>履歴を消してホームへ（レース後など）。</summary>
@@ -112,6 +120,7 @@ namespace NagaRace.Presentation.Main
             Current = _history.Pop();
             Current.Root.gameObject.SetActive(true);
             _backButton.gameObject.SetActive(Current.ShowBack && _history.Count > 0);
+            UpdateHomeButton();
             Current.OnShow();
             RefreshHeader();
         }
@@ -130,8 +139,8 @@ namespace NagaRace.Presentation.Main
             var date = services.Session.Date(b);
             var weather = services.Session.TodayConditions(b);
             int nextRace = services.RaceDay.NextRaceDay(services.Session) - services.Session.Day;
-            string race = nextRace == 0 ? "<color=#ffd84a>今日はレースの日</color>" : $"次の大会まで {nextRace}日";
-            _headerInfo.text = $"{date.Label}　天気: {WeatherForecast.WeatherLabel(weather.Weather)}　水量: {WeatherForecast.WaterLabel(weather.WaterLevel)}　{race}";
+            string race = nextRace == 0 ? "<color=#ffd84a><b>今日はレースの日</b></color>" : $"レースまで <b>{nextRace}日</b>";
+            _headerInfo.text = $"{date.Label}　{WeatherForecast.WeatherLabel(weather.Weather)}・水量{WeatherForecast.WaterLabel(weather.WaterLevel)}　{race}";
         }
 
         /// <summary>確認ダイアログ（03 §4: 危険度が高い場合のみ確認）。</summary>
@@ -200,14 +209,21 @@ namespace NagaRace.Presentation.Main
             backRect.anchoredPosition = new Vector2(24, 0);
             backRect.sizeDelta = new Vector2(180, 64);
 
+            _homeButton = UiKit.Button(rect, "ホーム", () => ShowRoot<HomeScreen>(), UiKit.Accent, 150, 64, 28);
+            var homeRect = (RectTransform)_homeButton.transform;
+            homeRect.anchorMin = homeRect.anchorMax = new Vector2(0, 0.5f);
+            homeRect.pivot = new Vector2(0, 0.5f);
+            homeRect.anchoredPosition = new Vector2(216, 0);
+            homeRect.sizeDelta = new Vector2(150, 64);
+
             _headerTitle = UiKit.Text("Title", rect, string.Empty, 40);
             _headerTitle.rectTransform.anchorMin = new Vector2(0, 0);
-            _headerTitle.rectTransform.anchorMax = new Vector2(0.35f, 1);
-            _headerTitle.rectTransform.offsetMin = new Vector2(230, 0);
+            _headerTitle.rectTransform.anchorMax = new Vector2(0.4f, 1);
+            _headerTitle.rectTransform.offsetMin = new Vector2(390, 0);
             _headerTitle.rectTransform.offsetMax = Vector2.zero;
 
             _headerInfo = UiKit.Text("Info", rect, string.Empty, 26, TextAnchor.MiddleRight, UiKit.SubText);
-            _headerInfo.rectTransform.anchorMin = new Vector2(0.35f, 0);
+            _headerInfo.rectTransform.anchorMin = new Vector2(0.4f, 0);
             _headerInfo.rectTransform.anchorMax = new Vector2(1, 1);
             _headerInfo.rectTransform.offsetMin = Vector2.zero;
             _headerInfo.rectTransform.offsetMax = new Vector2(-30, 0);

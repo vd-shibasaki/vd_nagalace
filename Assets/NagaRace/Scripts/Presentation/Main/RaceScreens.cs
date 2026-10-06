@@ -15,6 +15,7 @@ namespace NagaRace.Presentation.Main
     public sealed class CalendarScreen : UiScreen
     {
         private RectTransform _list;
+        private string _recommendedId;
 
         public CalendarScreen(MainUi ui) : base(ui)
         {
@@ -34,6 +35,20 @@ namespace NagaRace.Presentation.Main
             var session = Services.Session;
             var b = Services.Balance;
             int day = Services.RaceDay.NextRaceDay(session);
+            var c = Ui.SelectedCharacter;
+            _recommendedId = c != null && day == session.Day ? Guide.RecommendedTournament(c.Id)?.Tournament.Id : null;
+
+            // いま何をすればいいか
+            var banner = UiKit.CardBox("Banner", _list, new Color(0.12f, 0.3f, 0.2f, 0.96f), 18);
+            if (day == session.Day)
+            {
+                UiKit.Label(banner, "<size=36><b>今日はレースの日！</b></size>\n出たい大会の「出走登録へ」を押しましょう。<color=#ffd84a>★おすすめ</color> は今の実力で挑みやすい大会です。", 28);
+            }
+            else
+            {
+                UiKit.Label(banner, $"<size=36><b>次のレースの日まで あと{day - session.Day}日</b></size>\n今日は大会に出られません。それまでは育成で鍛えましょう。", 28);
+                UiKit.Button(banner, "育成へ", () => Ui.Show<TrainingScreen>(), UiKit.Accent, 320, 76, 32);
+            }
             for (int week = 0; week < 3; week++, day += b.Calendar.DaysPerWeek)
             {
                 bool today = day == session.Day;
@@ -54,8 +69,9 @@ namespace NagaRace.Presentation.Main
             var course = o.Course;
             var card = UiKit.CardBox($"Tournament {t.Id}", _list, o.Eligible ? UiKit.Card : new Color(0.12f, 0.14f, 0.16f, 0.9f));
             int danger = course.Segments.Max(s => s.Danger);
+            bool recommended = today && t.Id == _recommendedId;
             UiKit.Label(card,
-                $"<size=32><b>{t.Name}</b></size>　[{t.GradeLabel}]\n" +
+                $"<size=32><b>{t.Name}</b></size>　[{t.GradeLabel}]{(recommended ? "　<color=#ffd84a><b>★おすすめ</b></color>" : string.Empty)}\n" +
                 $"{course.Name}　{course.Distance:0}m　危険度 {new string('▲', danger)}" +
                 (o.Eligible ? string.Empty : $"\n<color=#a0a0a0>出走できません: {o.Reason}</color>"), 26);
             if (today && o.Eligible)
@@ -222,6 +238,7 @@ namespace NagaRace.Presentation.Main
     public sealed class ResultScreen : UiScreen
     {
         private Text _text;
+        private Text _next;
 
         public ResultScreen(MainUi ui) : base(ui)
         {
@@ -236,6 +253,7 @@ namespace NagaRace.Presentation.Main
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.55f);
             card.sizeDelta = new Vector2(1100, 0);
             _text = UiKit.Label(card, string.Empty, 32, UiKit.TextColor, TextAnchor.UpperCenter);
+            _next = UiKit.Label(card, string.Empty, 28, new Color(1f, 0.85f, 0.3f), TextAnchor.UpperCenter);
 
             var button = UiKit.Button(root, "ホームへ", () => Ui.ShowRoot<HomeScreen>(), UiKit.Accent, 360, 90, 36);
             var rect = (RectTransform)button.transform;
@@ -269,6 +287,8 @@ namespace NagaRace.Presentation.Main
             if (o.Placing.MaxFurnaceSeconds > 0) text.AppendLine($"葉脈炉 最長 {o.Placing.MaxFurnaceSeconds:0.0}秒");
             if (o.ParentTree != null) text.AppendLine($"\n「{o.ParentTree.Name}」が親木園に加わった");
             _text.text = text.ToString();
+            var next = Guide.Next(Ui);
+            _next.text = $"次にやること: <b>{next.Title}</b>";
             Tutorial.ShowOnce(Ui, "result");
         }
     }

@@ -88,6 +88,33 @@ namespace NagaRace.Presentation.Race
             BuildLostPanel();
         }
 
+        private Button _speedButton;
+        private Text _speedButtonText;
+        private Text _controls;
+
+        /// <summary>再生速度ボタンが押された。</summary>
+        public event System.Action SpeedPressed;
+
+        /// <summary>本番のレースで使う、速度ボタンと操作の案内。</summary>
+        public void ShowGameControls(float speed)
+        {
+            if (_speedButton == null)
+            {
+                var anchor = new Vector2(1f, 1f);
+                var image = UiFactory.Panel("SpeedButton", _safeRoot, anchor, anchor, new Vector2(-24f, -350f), new Vector2(200f, 64f), new Color(0.13f, 0.22f, 0.26f, 0.9f));
+                image.raycastTarget = true;
+                _speedButton = image.gameObject.AddComponent<Button>();
+                _speedButton.onClick.AddListener(() => SpeedPressed?.Invoke());
+                _speedButtonText = UiFactory.Label("Label", image.transform, _font, 28, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(190f, 60f), Color.white);
+
+                var bottomLeft = new Vector2(0f, 0f);
+                _controls = UiFactory.Label("Controls", _safeRoot, _font, 24, TextAnchor.LowerLeft, bottomLeft, bottomLeft, new Vector2(24f, 20f), new Vector2(560f, 110f), new Color(1f, 1f, 1f, 0.9f));
+                _controls.text = "<b>操作</b>\n葉脈炉の始動・解除: <b>Space</b> / 炉のボタン\n葉力チャンス: <b>F</b> / 緑の枠をタップ";
+            }
+
+            _speedButtonText.text = $"速度 x{speed:0}";
+        }
+
         /// <summary>危険度パネル・ロスト画面のクリック。</summary>
         public event System.Action PanelClicked;
 

@@ -114,6 +114,60 @@ namespace NagaRace.Tests.PlayMode
             }
         }
 
+        /// <summary>
+        /// 迷わず遊べるか: ホームの「今日やること」と、各画面の一番目立つボタンだけで20日以上進められる。
+        /// </summary>
+        [UnityTest]
+        [Timeout(900000)]
+        public IEnumerator 今日やることボタンだけで20日以上遊べる()
+        {
+            Ui.Get<TitleScreen>().NewGame();
+            CloseDialogs();
+            var services = GameServices.Instance;
+            services.Settings.AutoFurnace = true;
+            int startDay = services.Session.Day;
+            int races = 0;
+
+            for (int step = 0; step < 40 && GameServices.Instance.Session.Day - startDay < 21; step++)
+            {
+                CloseDialogs();
+                Assert.IsInstanceOf<HomeScreen>(Ui.Current, $"{step}手目: ホームにいない");
+                var action = Ui.Get<HomeScreen>().CurrentAction;
+                Assert.IsNotNull(action, "今日やることが出ていない");
+                int day = GameServices.Instance.Session.Day;
+                action.Run();
+                CloseDialogs();
+
+                if (Ui.Current is TrainingScreen training)
+                {
+                    // 最初からおすすめが選ばれているので、そのまま実行ボタン
+                    Assert.IsNotNull(training.RecommendedId);
+                    var t = GameServices.Instance.Trainings.Load().Get(training.RecommendedId);
+                    var c = Ui.SelectedCharacter;
+                    training.Choose(t, GameServices.Instance.Training.Preview(GameServices.Instance.Session, c.Id, t.Id));
+                    CloseDialogs();
+                    Ui.ShowRoot<HomeScreen>();
+                }
+                else if (Ui.Current is EntryScreen entry)
+                {
+                    entry.Enter();
+                    CloseDialogs();
+                    yield return FinishRaceAndReturn();
+                    races++;
+                }
+                else if (!(Ui.Current is HomeScreen))
+                {
+                    Assert.Fail($"今日やることの行き先が想定外: {Ui.Current.GetType().Name}");
+                }
+
+                yield return null;
+                Assert.Greater(GameServices.Instance.Session.Day, day, $"{step}手目: 今日やることを実行しても日が進まない（{action.Title}）");
+            }
+
+            Assert.GreaterOrEqual(GameServices.Instance.Session.Day - startDay, 20);
+            Assert.GreaterOrEqual(races, 3, "今日やることからレースに出られていない");
+        }
+
         /// <summary>目視確認用。NAGARACE_SCREENSHOT_DIR を設定し、描画ありで実行したときだけ撮る。</summary>
         [UnityTest]
         [Timeout(900000)]
@@ -198,7 +252,12 @@ namespace NagaRace.Tests.PlayMode
             entry.Enter();
             CloseDialogs();
 
-            // Race シーン
+            yield return FinishRaceAndReturn();
+        }
+
+        /// <summary>Race シーンでレースを最後まで進め、Main のリザルトからホームへ戻る。</summary>
+        private static IEnumerator FinishRaceAndReturn()
+        {
             yield return null;
             yield return null;
             var presenter = Object.FindFirstObjectByType<RacePresenter>();
